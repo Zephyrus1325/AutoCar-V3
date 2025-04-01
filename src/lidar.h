@@ -5,25 +5,18 @@
 // Created By Marco Aurélio 01/04/2025
 
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_task_wdt.h"
+
 #include "macros.h"
-
-void lidarTask(void* param){
-    Lidar lidar;
-
-    lidar.begin();
-
-    while(true){
-        lidar.update();
-    }
-
-    // Kill task in case something goes wrong
-    error("Lidar task was interrupted for some reason");
-}  
 
 class Lidar{
     public:
     void begin(){
         Serial2.begin(115200);
+        pinMode(LIDAR_PIN, OUTPUT);
+        setSpeed(215);
     }
 
     void update(){
@@ -45,6 +38,7 @@ class Lidar{
             }
             
         }
+        
     }
 
     private:
@@ -69,7 +63,7 @@ class Lidar{
     };
 
     enum messageType{
-        SLOW_SPEED = 0xAE,
+        WRONG_SPEED = 0xAE,
         NORMAL = 0xAD
     };
     // Buffer used for the Serial Data
@@ -81,6 +75,9 @@ class Lidar{
     uint16_t index = 0;
     // Function to parse the data from the buffer
     void parseData(){
+        
+        uint8_t rpm = buffer[RPM]; 
+
         if(buffer[MESSAGE_TYPE] == NORMAL){
             // Get message parameters
             uint16_t initial_angle = ((buffer[START_ANGLE0] << 8) + buffer[START_ANGLE1]);
@@ -89,28 +86,7 @@ class Lidar{
             
             // Iterate for every sample
             for(int i = 0; i < total_samples; i++){
-                uint16_t
-            }
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-        if(buffer[MESSAGE_TYPE] == NORMAL){
-            uint16_t initialAngle = ((buffer[START_ANGLE0] << 8) + buffer[START_ANGLE1]);
-            uint8_t samples = (buffer[PAYLOAD_LEN] - 5)/3; 
-            uint16_t angle_increment = initialAngle / samples;
-            for(int i = 0; i < samples; i++){
-                raw_reading[i].distance = (buffer[PAYLOAD_START + i * 3 + 1] << 8) + (buffer[PAYLOAD_START + i * 3 + 2]);
-                raw_reading[i].angle = initialAngle + angle_increment * i;
+                // Iterator thingy
             }
         }
     }
@@ -126,7 +102,25 @@ class Lidar{
         }
         return false;
       }
+
+    void setSpeed(uint8_t power){
+        analogWrite(LIDAR_PIN, constrain(power, 0, 255));
+    }
 };
+
+void lidarTask(void* param){
+    Lidar lidar;
+
+    lidar.begin();
+
+    while(true){
+        esp_task_wdt_reset();
+        lidar.update();
+    }
+
+    // Kill task in case something goes wrong
+    error("Lidar task was interrupted for some reason");
+}  
 
 
 #endif //LIDAR_H

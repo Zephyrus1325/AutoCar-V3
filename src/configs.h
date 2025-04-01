@@ -5,3 +5,4 @@
 #define SD_PIN 5
 #define RF24_CE_PIN 48
 #define RF24_CSN_PIN 49
+#define LIDAR_PIN 25
