@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.asm": "asm-intel-x86-generic",
+        "*.tcc": "cpp",
+        "fstream": "cpp"
+    }
+}

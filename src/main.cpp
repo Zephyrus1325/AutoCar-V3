@@ -1,18 +1,14 @@
 #include <Arduino.h>
+#include "files.h"
+#include "lidar.h"
 
-// put function declarations here:
-int myFunction(int, int);
+int main(){
+    // Setup everything
+    SD_begin();
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
-}
 
-void loop() {
-  // put your main code here, to run repeatedly:
-}
+    // Create main tasks
+    xTaskCreate(
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    );
 }
