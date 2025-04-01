@@ -3,6 +3,7 @@
 
 struct payload{
     uint8_t message_type;
+    uint8_t data[31];
 };
 
 enum message_type{
@@ -43,23 +44,28 @@ enum command_type{
 struct nav_data{
     Vector position;
     float speed;
-    float 
 };
 
 struct radio_info{
-
+    uint8_t data_rate;
+    uint8_t PALevel;
 };
 
 struct lidar_info{
-
+    uint8_t rpm;
+    uint8_t status;
 };
 
 struct motor_info{
-
+    float rpm;
+    float setpoint;
+    float kp;
+    float ki;
+    float kd;
 };
 
 struct chunk_metadata{
-
+    
 };
 
 struct chunk_data{
