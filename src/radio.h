@@ -51,7 +51,7 @@ void radioTask(void* param){
     }
 }
 
-
+/*
 
 void setup() {
 
@@ -135,6 +135,6 @@ void loop() {
   }
 
 }  // loop
-
+*/
 
 #endif //RADIO_H
