@@ -1,0 +1,50 @@
+name: PlatformIO build
+
+on:
+  pull_request:
+    branches: [master, v1.x]
+    paths:
+      - ".github/workflows/build_platformIO.yml"
+      - "library.json"
+      - "examples/**"
+      - "!examples/*.zip"
+  push:
+    branches: [master, v1.x]
+    paths:
+      - ".github/workflows/build_platformIO.yml"
+      - "library.json"
+      - "examples/**"
+      - "!examples/*.zip"
+  release:
+    types: [published, edited]
+
+jobs:
+  validate_lib_json:
+    uses: nRF24/.github/.github/workflows/validate_deploy_platformio.yaml@main
+    secrets: inherit
+    with:
+      deploy-release: ${{ github.event_name == 'release' }}
+
+  build:
+    needs: [validate_lib_json]
+    uses: nRF24/.github/.github/workflows/build_platformio.yaml@main
+    with:
+      example-path: ${{ matrix.example }}
+      board-id: ${{ matrix.board }}
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - "examples/helloworld_rx/helloworld_rx.ino"
+          - "examples/helloworld_rx_advanced/helloworld_rx_advanced.ino"
+          - "examples/helloworld_tx/helloworld_tx.ino"
+          - "examples/helloworld_tx_advanced/helloworld_tx_advanced.ino"
+          - "examples/Network_Priority_RX/Network_Priority_RX.ino"
+          - "examples/Network_Priority_TX/Network_Priority_TX.ino"
+        board:
+          - "teensy31"
+          - "teensy35"
+          - "teensy36"
+          - "teensy40"
+          - "teensy41"
+          - "teensylc"

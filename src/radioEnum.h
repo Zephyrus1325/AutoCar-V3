@@ -1,11 +1,6 @@
 #include <Arduino.h>
 #include "util.h"
 
-struct packet{
-    uint8_t message_type;
-    uint8_t data[31];
-};
-
 enum message_type{
     LOG_MESSAGE = 0x00,         // Sender: CarV3
     
@@ -13,16 +8,14 @@ enum message_type{
     INFO_RADIO = 0x11,          // Sender: CarV3
     INFO_LIDAR = 0x12,          // Sender: CarV3
     INFO_GPS = 0x13,            // Sender: CarV3
-    INFO_MOTORLEFT = 0x14,      // Sender: CarV3   
-    INFO_MOTORRIGHT = 0x15,     // Sender: CarV3       
+    INFO_MOTOR = 0x14,      // Sender: CarV3      
     INFO_CHUNK = 0x16,          // Sender: CarV3
 
     CONFIG_NAV = 0x20,          // Sender: Base    
     CONFIG_RADIO = 0x21,        // Sender: Base        
     CONFIG_LIDAR = 0x22,        // Sender: Base        
     CONFIG_GPS  = 0x23,         // Sender: Base    
-    CONFIG_MOTORLEFT = 0x24,    // Sender: Base            
-    CONFIG_MOTORRIGHT = 0x25,   // Sender: Base            
+    CONFIG_MOTOR = 0x24,    // Sender: Base                    
     CONFIG_CHUNK = 0x26,        // Sender: Base        
 
     CHUNK_METADATA = 0x40,      // Sender: CarV3
@@ -31,19 +24,10 @@ enum message_type{
     COMMAND = 0xFF              // Sender: Both
 };
 
-enum command_type{
-    REQUEST_DATA = 0x10,        // Sender: Both            
-    REQUEST_SEND = 0x11,        // Sender: Both    
-    REQUEST_ACKNOLEDGE = 0x12,  // Sender: Both        
-    REQUEST_PACKET = 0x13,      // Sender: Both    
-    ACKNOLEDGE = 0xAA,          // Sender: Both
-
-    END_OF_PACKET = 0xFF        // Sender: Both
-};
-
 struct nav_data{
     Vector position;
     float speed;
+    float heading;
 };
 
 struct radio_info{
@@ -56,8 +40,14 @@ struct lidar_info{
     uint8_t status;
 };
 
+struct gps_info{
+    // I dont know it what to put in here  
+};
+
 struct motor_info{
+    uint8_t side;
     float rpm;
+    float speed;
     float setpoint;
     int16_t throttle;
     float kp;
@@ -72,12 +62,21 @@ struct chunk_metadata{
 };
 
 struct chunk_data{
-    uint8_t data[CHUNK_STORAGE];
+    Vector position;        // Chunk position
+    uint16_t subdivision;   // Subdivion position
+    uint8_t* data;          // data inside subdivision
 };
 
 struct command{
     uint8_t command_type;
     uint8_t parameters[31];
+};
+
+struct radioQueueMeta{
+    uint8_t messageType;    // Message type
+    uint8_t length;         // Length of the message (lol)
+    void* data;             // Pointer to the data to be sent
+    uint8_t* sent;          // Pointer to a sent flag (set to null if unused)
 };
 
 

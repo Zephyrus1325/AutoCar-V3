@@ -36,7 +36,7 @@ void setup(){
     //    ARDUINO_RUNNING_CORE);
         
     
-    //xTaskCreateUniversal(SDTask,
+    //xTaskCreateUniversal(sdTask,
     //    "SD Task", 
     //    8000, 
     //    (void*) 1, 
@@ -44,7 +44,7 @@ void setup(){
     //    &sdHandler,
     //    ARDUINO_RUNNING_CORE);  
     
-    //xTaskCreateUniversal(MotorTask,
+    //xTaskCreateUniversal(motorTask,
     //    "Motor Task", 
     //    8000, 
     //    (void*) 1, 
@@ -52,7 +52,7 @@ void setup(){
     //    &motorHandler,
     //    ARDUINO_RUNNING_CORE); 
         
-    //xTaskCreateUniversal(NavTask,
+    //xTaskCreateUniversal(navTask,
     //    "Navigation Task", 
     //    8000, 
     //    (void*) 1, 

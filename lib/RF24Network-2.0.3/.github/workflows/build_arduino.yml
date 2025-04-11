@@ -1,0 +1,98 @@
+name: Arduino CLI build
+
+on:
+  pull_request:
+    branches: [master, v1.x]
+    paths:
+      - ".github/workflows/build_arduino.yml"
+      - "examples/**"
+
+  push:
+    branches: [master, v1.x]
+    paths:
+      - ".github/workflows/build_arduino.yml"
+      - "examples/**"
+
+jobs:
+  build:
+    uses: nRF24/.github/.github/workflows/build_arduino.yaml@main
+    with:
+      sketch-paths: |
+        - examples/helloworld_rx
+        - examples/helloworld_rx_advanced
+        - examples/helloworld_tx_advanced
+        - examples/helloworld_tx
+        - examples/Network_Priority_RX
+        - examples/Network_Priority_TX
+      # - examples/Network_Ping
+      # - examples/Network_Ping_Sleep
+      libraries: |
+        - source-url: https://github.com/nRF24/RF24.git
+        - source-path: ./
+        - name: nrf_to_nrf
+      fqbn: ${{ matrix.fqbn }}
+      enable-deltas-report: ${{ matrix.enable-deltas-report }}
+      platforms: |
+        - name: arduino:avr
+        - name: arduino:megaavr
+        - name: arduino:samd
+        - name: arduino:mbed
+      # - name: arduino:sam
+    strategy:
+      fail-fast: false
+      matrix:
+        fqbn:
+          - "arduino:avr:yun"
+          - "arduino:avr:uno"
+          - "arduino:avr:diecimila"
+          - "arduino:avr:mega"
+          - "arduino:avr:megaADK"
+          - "arduino:avr:leonardo"
+          - "arduino:avr:micro"
+          - "arduino:avr:esplora"
+          - "arduino:avr:mini"
+          - "arduino:avr:ethernet"
+          - "arduino:avr:fio"
+          - "arduino:avr:bt"
+          # - "arduino:avr:LilyPad" # board not found
+          - "arduino:avr:LilyPadUSB"
+          - "arduino:avr:pro"
+          - "arduino:avr:atmegang"
+          - "arduino:avr:robotControl"
+          # - "arduino:avr:gemma"  # does not support SPI
+          - "arduino:avr:circuitplay32u4cat"
+          - "arduino:avr:yunmini"
+          - "arduino:avr:chiwawa"
+          - "arduino:avr:one"
+          - "arduino:avr:unowifi"
+          - "arduino:mbed:nano33ble"
+          - "arduino:samd:mkr1000"
+          - "arduino:samd:mkrwifi1010"
+          - "arduino:samd:nano_33_iot"
+          - "arduino:samd:mkrfox1200"
+          - "arduino:samd:mkrwan1300"
+          - "arduino:samd:mkrwan1310"
+          - "arduino:samd:mkrgsm1400"
+          - "arduino:samd:mkrnb1500"
+          - "arduino:samd:mkrvidor4000"
+          - "arduino:samd:adafruit_circuitplayground_m0"
+          - "arduino:samd:mzero_pro_bl"
+          - "arduino:samd:mzero_bl"
+          - "arduino:samd:tian"
+          - "arduino:megaavr:uno2018"
+          # - "arduino:megaavr:nano4809"  # board not found
+        # By default, don't generate size deltas data.
+        enable-deltas-report: 
+          - false
+        # Generate size deltas data for this board
+        include:
+          - fqbn: arduino:avr:nano
+            enable-deltas-report: true
+          - fqbn: arduino:samd:mkrzero
+            enable-deltas-report: true
+
+  # When using a matrix to compile for multiple boards, it's necessary to use a separate job for the deltas report
+  report:
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    uses: nRF24/.github/.github/workflows/arduino_size_deltas.yaml@main

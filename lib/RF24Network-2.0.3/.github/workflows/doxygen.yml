@@ -1,0 +1,36 @@
+name: build Docs
+
+on:
+  pull_request:
+    branches: [master, v1.x]
+    paths:
+      - "*.h"
+      - "docs/**"
+      - "!docs/README.md"
+      - "*.md"
+      - "images/**"
+      - ".github/workflows/doxygen.yml"
+      - "Doxyfile"
+      - "library.properties" # get lib version from here
+  push:
+    branches: [master, v1.x]
+    paths:
+      - "*.h"
+      - "docs/**"
+      - "!docs/README.md"
+      - "*.md"
+      - "images/**"
+      - ".github/workflows/doxygen.yml"
+      - "Doxyfile"
+      - "library.properties" # get lib version from here
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    uses: nRF24/.github/.github/workflows/build_docs.yaml@main
+    with:
+      deploy-gh-pages: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master') }}
+      doxygen-version: '1.11.0'
+    secrets: inherit
