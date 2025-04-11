@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "util.h"
 
-struct payload{
+struct packet{
     uint8_t message_type;
     uint8_t data[31];
 };
@@ -59,21 +59,25 @@ struct lidar_info{
 struct motor_info{
     float rpm;
     float setpoint;
+    int16_t throttle;
     float kp;
     float ki;
     float kd;
 };
 
 struct chunk_metadata{
-    
+    Vector position;
+    int16_t length;                    // length of the walls of a chunk 
+    int16_t precision;                 // Precision used in this chunk
 };
 
 struct chunk_data{
-
+    uint8_t data[CHUNK_STORAGE];
 };
 
 struct command{
-
+    uint8_t command_type;
+    uint8_t parameters[31];
 };
 
 
