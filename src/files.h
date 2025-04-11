@@ -22,12 +22,13 @@ struct {
 
 // Begin SD Card (Must be called before using SD Card)
 void SD_begin(){
+
     if(!SD.begin(SD_PIN)){
         error("SD Card Mount Failed\n");
         return;
     }
 
-    SD_Meta.type = SD.cardSize();
+    SD_Meta.type = SD.cardType();
 
     if(SD_Meta.type == CARD_NONE){
       error("No SD card attached\n");
@@ -43,12 +44,13 @@ void SD_begin(){
 void readSD(char* path, uint8_t* buffer, uint32_t data_length){
     File file = SD.open(path, FILE_READ);
     
+
     if(!file){
         error("Failed to open file for reading\n");
         return;
     }
 
-    if(file.read(buffer, data_length) != -1){
+    if(!file.read(buffer, data_length)){
         error("Data reading failed!\n");
     }
 
@@ -64,11 +66,15 @@ void writeSD(char* path, uint8_t* buffer, uint32_t data_length){
         return;
     }
 
-    if(file.write(buffer, data_length)){
+    if(!file.write(buffer, data_length)){
         error("File write failed!\n");
     }
 
     file.close();
+}
+
+void SDTask(void* param){
+
 }
 
 #endif // FILES_H

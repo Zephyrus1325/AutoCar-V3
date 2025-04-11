@@ -11,12 +11,25 @@
 
 #include "macros.h"
 
+#include "files.h"
+
 class Lidar{
     public:
     void begin(){
         Serial2.begin(115200);
         pinMode(LIDAR_PIN, OUTPUT);
         setSpeed(215);
+        uint8_t fodase[30000];
+        unsigned long start = micros();
+        writeSD("/test.tst", fodase , sizeof(fodase));
+        unsigned long end = micros();
+        Serial.print("Write: ");
+        Serial.println(end-start);
+        start = micros();
+        readSD("/test.tst", fodase , sizeof(fodase));
+        end = micros();
+        Serial.print("Read: ");
+        Serial.println(end-start);
     }
 
     void update(){
@@ -77,17 +90,17 @@ class Lidar{
     void parseData(){
         
         uint8_t rpm = buffer[RPM]; 
-
         if(buffer[MESSAGE_TYPE] == NORMAL){
             // Get message parameters
             uint16_t initial_angle = ((buffer[START_ANGLE0] << 8) + buffer[START_ANGLE1]);
             uint8_t total_samples = (buffer[PAYLOAD_LEN] - 5)/3;
             uint16_t angle_increment = 2250 / total_samples;
-            
             // Iterate for every sample
-            for(int i = 0; i < total_samples; i++){
+            for(int i = 0; i < total_samples*3; i += 3){
                 // Iterator thingy
+                uint16_t distance = buffer[PAYLOAD_START + i] << 8 + buffer[PAYLOAD_START + i + 1];
             }
+            
         }
     }
 
