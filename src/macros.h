@@ -11,7 +11,7 @@
 
 #ifdef DEBUG
 // Used for data logging in many cases
-#define log(text) Serial.print(text)
+#define log(text) Serial.print(text);
 #define error(text) Serial.print("ERROR: " text);
 
 #endif //DEBUG

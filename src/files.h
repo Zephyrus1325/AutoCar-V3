@@ -5,6 +5,10 @@
 // v0.1
 // Created By Marco Aurélio 01/04/2025
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_task_wdt.h"
+
 #include "FS.h"
 #include "SD.h"
 #include "SPI.h"
@@ -41,7 +45,7 @@ void SD_begin(){
 }
 
 // Reads a block of data from SD card and writes to buffer
-void readSD(char* path, uint8_t* buffer, uint32_t data_length){
+void readSD(const char* path, uint8_t* buffer, uint32_t data_length){
     File file = SD.open(path, FILE_READ);
     
 
@@ -58,7 +62,7 @@ void readSD(char* path, uint8_t* buffer, uint32_t data_length){
 }
 
 // Writes a block of data from buffer to SD card
-void writeSD(char* path, uint8_t* buffer, uint32_t data_length){
+void writeSD(const char* path, uint8_t* buffer, uint32_t data_length){
     File file = SD.open(path, FILE_WRITE);
 
     if(!file){
@@ -74,7 +78,10 @@ void writeSD(char* path, uint8_t* buffer, uint32_t data_length){
 }
 
 void SDTask(void* param){
-
+    while(true){
+        esp_task_wdt_reset();
+        yield();
+    }
 }
 
 #endif // FILES_H

@@ -11,46 +11,50 @@ TaskHandle_t sdHandler;
 TaskHandle_t motorHandler;
 TaskHandle_t navHandler;
 
+
 void setup(){
     // Initialize general-use libraries
     #ifdef DEBUG
         Serial.begin(115200);
     #endif
     SD_begin();
-    xTaskCreateUniversal(lidarTask,
-         "Lidar Task", 
-         //18000,
-         61000, 
-         (void*) 1, 
-         1, 
-         &lidarHandler,
-        ARDUINO_RUNNING_CORE);
-
+    radioQueue = xQueueCreate(RADIO_QUEUE_SIZE, sizeof(radioQueueData)); // Initialize messages queue
     
-    //xTaskCreateUniversal(radioTask,
-    //    "Radio Task", 
-    //    8000, 
-    //    (void*) 1, 
-    //    1, 
-    //    &radioHandler,
-    //    ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(radioTask,
+        "Radio Task", 
+        10000, 
+        (void*) 1, 
+        1, 
+        &radioHandler,
+        AUX_CORE);
         
     
-    //xTaskCreateUniversal(sdTask,
+    //xTaskCreateUniversal(SDTask,
     //    "SD Task", 
     //    8000, 
     //    (void*) 1, 
     //    1, 
     //    &sdHandler,
-    //    ARDUINO_RUNNING_CORE);  
+    //    AUX_CORE);  
     
+        
+    xTaskCreateUniversal(lidarTask,
+        "Lidar Task", 
+        //18000,
+        16000, 
+        (void*) 1, 
+        1, 
+        &lidarHandler,
+        MAIN_CORE);
+   
+
     //xTaskCreateUniversal(motorTask,
     //    "Motor Task", 
     //    8000, 
     //    (void*) 1, 
     //    1, 
     //    &motorHandler,
-    //    ARDUINO_RUNNING_CORE); 
+    //    MAIN_CORE); 
         
     //xTaskCreateUniversal(navTask,
     //    "Navigation Task", 
@@ -58,7 +62,8 @@ void setup(){
     //    (void*) 1, 
     //    1, 
     //    &navHandler,
-    //    ARDUINO_RUNNING_CORE); 
+    //    AUX_CORE); 
+    vTaskStartScheduler(); // Start Running Tasks;
 }
 
 void loop(){

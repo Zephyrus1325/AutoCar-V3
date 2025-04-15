@@ -1,5 +1,11 @@
+#ifndef RADIO_ENUM_H
+#define RADIO_ENUM_H
 #include <Arduino.h>
 #include "util.h"
+#include "configs.h"
+#include "string.h"
+
+QueueHandle_t radioQueue;
 
 enum message_type{
     LOG_MESSAGE = 0x00,         // Sender: CarV3
@@ -22,6 +28,16 @@ enum message_type{
     CHUNK_DATA = 0x41,          // Sender: CarV3
 
     COMMAND = 0xFF              // Sender: Both
+};
+
+struct log_message {
+    uint8_t length;
+    char text[MAX_LOG_MESSAGE];
+    void setText(const char* str) {
+        strncpy(text, str, MAX_LOG_MESSAGE);
+        text[MAX_LOG_MESSAGE - 1] = '\0'; // segurança
+        length = strlen(text);
+    }
 };
 
 struct nav_data{
@@ -63,8 +79,8 @@ struct chunk_metadata{
 
 struct chunk_data{
     Vector position;        // Chunk position
-    uint16_t subdivision;   // Subdivion position
-    uint8_t* data;          // data inside subdivision
+    uint16_t subdivision;   // Subdivion id
+    uint8_t data[CHUNK_RADIO_SIZE];          // data inside subdivision
 };
 
 struct command{
@@ -72,14 +88,15 @@ struct command{
     uint8_t parameters[31];
 };
 
-struct radioQueueMeta{
+struct radioQueueData{
     uint8_t messageType;    // Message type
-    uint8_t length;         // Length of the message (lol)
-    void* data;             // Pointer to the data to be sent
-    uint8_t* sent;          // Pointer to a sent flag (set to null if unused)
+    uint8_t data[100];      // Pointer to the data to be sent
+    uint8_t sent;           // Pointer to a sent flag (set to null if unused)
 };
 
 
+
+#endif // RADIO_ENUM_H
 
 
 

@@ -11,25 +11,19 @@
 
 #include "macros.h"
 
+#include "radioEnum.h"
 #include "files.h"
+
+
 
 class Lidar{
     public:
+
     void begin(){
         Serial2.begin(115200);
         pinMode(LIDAR_PIN, OUTPUT);
         setSpeed(215);
-        uint8_t fodase[30000];
-        unsigned long start = micros();
-        writeSD("/test.tst", fodase , sizeof(fodase));
-        unsigned long end = micros();
-        Serial.print("Write: ");
-        Serial.println(end-start);
-        start = micros();
-        readSD("/test.tst", fodase , sizeof(fodase));
-        end = micros();
-        Serial.print("Read: ");
-        Serial.println(end-start);
+        log("THIS IS RUNNING?/????\n");
     }
 
     void update(){
@@ -79,7 +73,8 @@ class Lidar{
         WRONG_SPEED = 0xAE,
         NORMAL = 0xAD
     };
-    // Buffer used for the Serial Data
+
+    // Buffer used for the Serial2 Data
     #define NOMINAL_SAMPLES 24
     #define DATA_SIZE 3600
     uint8_t buffer[100];
@@ -98,7 +93,7 @@ class Lidar{
             // Iterate for every sample
             for(int i = 0; i < total_samples*3; i += 3){
                 // Iterator thingy
-                uint16_t distance = buffer[PAYLOAD_START + i] << 8 + buffer[PAYLOAD_START + i + 1];
+                uint16_t distance = (buffer[PAYLOAD_START + i] << 8) + buffer[PAYLOAD_START + i + 1];
             }
             
         }
@@ -126,9 +121,16 @@ void lidarTask(void* param){
 
     lidar.begin();
 
+    log_message message;
+    message.setText("Hello from AutoCar V3\n");
+    radioQueueData meta{LOG_MESSAGE, sizeof(message),0, NULL};
+    memccpy(&message, &meta.data, sizeof(log_message));
+    xQueueSend(radioQueue, &meta, 0);
+
     while(true){
         esp_task_wdt_reset();
         lidar.update();
+        yield();
     }
 
     // Kill task in case something goes wrong
