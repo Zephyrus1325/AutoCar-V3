@@ -92,7 +92,7 @@ void radioTask(void* param){
 
                 case CHUNK_METADATA:
                 {
-                    data_length = sizeof(chunk_metadata));
+                    data_length = sizeof(chunk_metadata);
                     break;
                 }
                 case CHUNK_DATA:

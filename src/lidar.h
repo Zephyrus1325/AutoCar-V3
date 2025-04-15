@@ -123,8 +123,7 @@ void lidarTask(void* param){
 
     log_message message;
     message.setText("Hello from AutoCar V3\n");
-    radioQueueData meta{LOG_MESSAGE, sizeof(message),0, NULL};
-    memccpy(&message, &meta.data, sizeof(log_message));
+    radioQueueData meta{LOG_MESSAGE, sizeof(message), 0};
     xQueueSend(radioQueue, &meta, 0);
 
     while(true){

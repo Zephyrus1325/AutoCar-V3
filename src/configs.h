@@ -12,12 +12,14 @@
 // Radio Config
 #define RADIO_QUEUE_SIZE 50     // Number of data quests
 #define RECEIVE_BUFFER_SIZE CHUNK_RADIO_SIZE // Size of radio RX buffer (bytes)
-#define MAX_LOG_MESSAGE 64
+#define MAX_LOG_MESSAGE 64      // Maximum length of a log message
 
 // Motor Config
 #define MOTOR_UPDATE_TIME 10      // Time between each motor update
-#define MOTOR_WHEEL_RADIUS 15.6f  
+#define MOTOR_WHEEL_RADIUS 15.6f    // Radius of wheel in cm
 
+// Sensors Config
+#define SENSOR_UPDATE_PERIOD 100 // Update wait time (millis)
 
 // Pins Config
 // Motor Pins
