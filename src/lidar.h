@@ -11,36 +11,48 @@
 
 #include "macros.h"
 
-#include "radioEnum.h"
+#include "radio.h"
 #include "files.h"
 
 
 
 class Lidar{
+
+    #define DATA_SIZE 3600
     public:
 
     void begin(){
-        Serial2.begin(115200);
-        pinMode(LIDAR_PIN, OUTPUT);
-        setSpeed(215);
-        log("THIS IS RUNNING?/????\n");
+        Serial2.begin(115200);          // Initialize Serial for Data Receiving
+        pinMode(LIDAR_PIN, OUTPUT);     // Set Motor Control Pin as OUTPUT
+        setSpeed(215);                  // Set Motor Speed
+        // Allocate Memory for raw readings buffer
+        raw_reading = (reading*) malloc(sizeof(reading) * DATA_SIZE);
+        if (raw_reading == nullptr) {
+            error("Memory Allocation Error: LIDAR\n");
+        }
     }
 
     void update(){
+
+        // While there is data available on the serial
         while(Serial2.available() > 0){
-            uint8_t reading = Serial2.read();
-            buffer[index] = reading;
-            index++;
+            esp_task_wdt_reset();                   // Reset watchdog timer
+            uint8_t reading = Serial2.read();       // Read received byte
+            buffer[index] = reading;                // Store into buffer
+            index++;                                
+            // If the buffer starts with correct header, continue adding bytes accordingly
             if(buffer[SYNC0] == 0xAA && buffer[SYNC1] == 0x00){
+                // If the index is more than the expected bytes to be received, parse the received data
                 if(index > (buffer[MESSAGE_LEN] + 2)){
                     parseData();
                     index = 0;
                 }     
+                // Else, if index is 
             } else if(index > SYNC1){
                 index = 0;
             } 
-
-            if(index > 100){
+            // Safety measure: if index if bigger than max possible value, reset it
+            if(index >= sizeof(buffer)){
                 index = 0;
             }
             
@@ -50,8 +62,8 @@ class Lidar{
 
     private:
     struct reading{
-        uint16_t distance;  //distance / 0.25
-        uint16_t angle;     //angle * 100
+        uint16_t distance;  // distance in cm = distance * 0.25
+        uint16_t angle;     // angle in deg = angle / 100
     };
 
     enum messageData{
@@ -75,10 +87,8 @@ class Lidar{
     };
 
     // Buffer used for the Serial2 Data
-    #define NOMINAL_SAMPLES 24
-    #define DATA_SIZE 3600
     uint8_t buffer[100];
-    reading raw_reading[DATA_SIZE];
+    reading* raw_reading = nullptr;
     // Packet reading info
     uint16_t index = 0;
     // Function to parse the data from the buffer
@@ -91,45 +101,49 @@ class Lidar{
             uint8_t total_samples = (buffer[PAYLOAD_LEN] - 5)/3;
             uint16_t angle_increment = 2250 / total_samples;
             // Iterate for every sample
-            for(int i = 0; i < total_samples*3; i += 3){
-                // Iterator thingy
-                uint16_t distance = (buffer[PAYLOAD_START + i] << 8) + buffer[PAYLOAD_START + i + 1];
-            }
+            //for(int i = 0; i < total_samples*3; i += 3){
+            //    // Iterator thingy
+            //    uint16_t distance = (buffer[PAYLOAD_START + i] << 8) + buffer[PAYLOAD_START + i + 1];
+            //}
             
         }
     }
 
-      bool checkCRC(){
-        uint16_t crc = 0;
-        uint8_t len = buffer[MESSAGE_LEN];
-        for(int i = 0; i < buffer[MESSAGE_LEN]; i++){
-            crc += buffer[i];
-        }
-        if(((crc >> 8) == buffer[len]) && ((crc & 0xff) == buffer[len + 1])){
-            return true;
-        }
-        return false;
+
+    // Error checking via CRC
+    bool checkCRC(){
+      uint16_t crc = 0;
+      uint8_t len = buffer[MESSAGE_LEN];
+
+      // Calculates CRC Sum via received data 
+      for(int i = 0; i < buffer[MESSAGE_LEN]; i++){
+          crc += buffer[i];
       }
 
+      // Compares with received CRC
+      if(((crc >> 8) == buffer[len]) && ((crc & 0xff) == buffer[len + 1])){
+        return true;
+      }
+      return false;
+    }
+
+    // Sets lidar speed
     void setSpeed(uint8_t power){
         analogWrite(LIDAR_PIN, constrain(power, 0, 255));
     }
 };
 
+Lidar lidar;
+char text[] = "Hello World! This message is written from LidarTask(tm)";
+
 void lidarTask(void* param){
-    Lidar lidar;
-
-    lidar.begin();
-
-    log_message message;
-    message.setText("Hello from AutoCar V3\n");
-    radioQueueData meta{LOG_MESSAGE, sizeof(message), 0};
-    xQueueSend(radioQueue, &meta, 0);
-
+    
+    SDQueueMeta sd{WRITE, sizeof(text), text, "/HelloLidar.txt"};
+    xQueueSend(sdQueue, &sd, 0);
     while(true){
-        esp_task_wdt_reset();
-        lidar.update();
-        yield();
+        esp_task_wdt_reset();               // Reset WatchDog Timer, or else task will fail
+        lidar.update();                     // Update Lidar object
+        vTaskDelay(pdMS_TO_TICKS(10));      // Delay a bit for other tasks to work and free CPU time
     }
 
     // Kill task in case something goes wrong

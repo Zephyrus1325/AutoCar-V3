@@ -4,6 +4,7 @@
 #include "chunkHandler.h"
 #include "radio.h"
 #include "files.h"
+#include "sensors.h"
 
 TaskHandle_t lidarHandler;
 TaskHandle_t radioHandler;
@@ -11,15 +12,23 @@ TaskHandle_t sdHandler;
 TaskHandle_t motorHandler;
 TaskHandle_t navHandler;
 
-
 void setup(){
     // Initialize general-use libraries
     #ifdef DEBUG
         Serial.begin(115200);
     #endif
     SD_begin();
+    lidar.begin();
+    //radioStatus = radio.begin();
     radioQueue = xQueueCreate(RADIO_QUEUE_SIZE, sizeof(radioQueueData)); // Initialize messages queue
-    
+    sdQueue = xQueueCreate(SD_QUEUE_SIZE, sizeof(SDQueueMeta));  // Initialize file operations queue
+    if(radioQueue == NULL){
+      error("Radio Queue was not created!\n");
+    }
+    if(sdQueue == NULL){
+        error("SD Queue was not created!\n");
+    }
+
     xTaskCreateUniversal(radioTask,
         "Radio Task", 
         10000, 
@@ -29,19 +38,18 @@ void setup(){
         AUX_CORE);
         
     
-    //xTaskCreateUniversal(SDTask,
-    //    "SD Task", 
-    //    8000, 
-    //    (void*) 1, 
-    //    1, 
-    //    &sdHandler,
-    //    AUX_CORE);  
+    xTaskCreateUniversal(sdTask,
+        "SD Task", 
+        8000, 
+        (void*) 1, 
+        1, 
+        &sdHandler,
+        AUX_CORE);  
     
         
     xTaskCreateUniversal(lidarTask,
         "Lidar Task", 
-        //18000,
-        16000, 
+        8000, 
         (void*) 1, 
         1, 
         &lidarHandler,
@@ -63,7 +71,14 @@ void setup(){
     //    1, 
     //    &navHandler,
     //    AUX_CORE); 
-    vTaskStartScheduler(); // Start Running Tasks;
+
+    //xTaskCreateUniversal(sensorsTask,
+    //    "Sensor Task", 
+    //    8000, 
+    //    (void*) 1, 
+    //    1, 
+    //    &navHandler,
+    //    MAIN_CORE); 
 }
 
 void loop(){

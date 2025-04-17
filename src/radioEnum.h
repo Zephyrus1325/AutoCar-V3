@@ -14,14 +14,14 @@ enum message_type{
     INFO_RADIO = 0x11,          // Sender: CarV3
     INFO_LIDAR = 0x12,          // Sender: CarV3
     INFO_GPS = 0x13,            // Sender: CarV3
-    INFO_MOTOR = 0x14,      // Sender: CarV3      
+    INFO_MOTOR = 0x14,          // Sender: CarV3      
     INFO_CHUNK = 0x16,          // Sender: CarV3
 
     CONFIG_NAV = 0x20,          // Sender: Base    
     CONFIG_RADIO = 0x21,        // Sender: Base        
     CONFIG_LIDAR = 0x22,        // Sender: Base        
     CONFIG_GPS  = 0x23,         // Sender: Base    
-    CONFIG_MOTOR = 0x24,    // Sender: Base                    
+    CONFIG_MOTOR = 0x24,        // Sender: Base                    
     CONFIG_CHUNK = 0x26,        // Sender: Base        
 
     CHUNK_METADATA = 0x40,      // Sender: CarV3
@@ -29,6 +29,14 @@ enum message_type{
 
     COMMAND = 0xFF              // Sender: Both
 };
+
+// Main method of moving queue data around
+
+struct radioQueueData{
+    uint8_t messageType;    // Message type
+    uint8_t data[100];      // Pointer to the data to be sent
+};
+
 
 struct log_message {
     uint8_t length;
@@ -80,21 +88,13 @@ struct chunk_metadata{
 struct chunk_data{
     Vector position;        // Chunk position
     uint16_t subdivision;   // Subdivion id
-    uint8_t data[CHUNK_RADIO_SIZE];          // data inside subdivision
+    uint8_t* data;          // data inside subdivision
 };
 
 struct command{
     uint8_t command_type;
     uint8_t parameters[31];
 };
-
-struct radioQueueData{
-    uint8_t messageType;    // Message type
-    uint8_t data[100];      // Pointer to the data to be sent
-    uint8_t sent;           // Pointer to a sent flag (set to null if unused)
-};
-
-
 
 #endif // RADIO_ENUM_H
 

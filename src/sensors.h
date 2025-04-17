@@ -25,7 +25,7 @@ class IMU{
     private:
     BMP180I2C bmp;
     MPU6050 mpu;
-    QMC5883LCompass mag;
+    QMC5883LCompass qmc;
     
     vector16_t accelRaw;
     vector16_t gyroRaw;
@@ -50,21 +50,6 @@ class IMU{
     void begin(){
 
         Wire.begin();
-        
-        // Check if all devices are working properly
-        Wire.beginTransmission(0x68);
-        if(Wire.endTransmission()){
-            error("MPU Is not working!");
-        }
-        Wire.beginTransmission(0x0D);
-        if(Wire.endTransmission()){
-            error("QMC5883L Is not working!");
-        }
-        Wire.beginTransmission(0x77);
-        if(Wire.endTransmission()){
-            error("BMP180 Is not working!");
-        }
-
 
         // Set up mpu to allow I2C bus sharing
         Wire.beginTransmission(0x68);
@@ -83,14 +68,29 @@ class IMU{
         Wire.write(0x00);
         Wire.endTransmission();
 
+        // Check if all devices are working properly
+        Wire.beginTransmission(0x68);
+        if(Wire.endTransmission()){
+            error("MPU Is not working!");
+        }
+        Wire.beginTransmission(0x0D);
+        if(Wire.endTransmission()){
+            error("QMC5883L Is not working!");
+        }
+        Wire.beginTransmission(0x77);
+        if(Wire.endTransmission()){
+            error("BMP180 Is not working!");
+        }
+        
+
         mpu.initialize();
         mpu.CalibrateAccel();
         mpu.CalibrateGyro();
 
-        mag.init();
-        mag.setMagneticDeclination(-23, 53);
-        mag.setCalibrationOffsets(-2190, -650, 361);
-        mag.setCalibrationScales(1.0, 1.10, 1);
+        qmc.init();
+        qmc.setMagneticDeclination(-23, 53);
+        qmc.setCalibrationOffsets(-2190, -650, 361);
+        qmc.setCalibrationScales(1.0, 1.10, 1);
 
         bmp.begin();
         bmp.resetToDefaults();
@@ -102,11 +102,11 @@ class IMU{
         mpu.getRotation(&gyro.x, &gyro.y, &gyro.z);
         tempRaw = mpu.getTemperature();
 
-        magRaw.x = mag.getX();
-        magRaw.y = mag.getY();
-        magRaw.z = mag.getZ();
+        magRaw.x = qmc.getX();
+        magRaw.y = qmc.getY();
+        magRaw.z = qmc.getZ();
 
-        heading = mag.getAzimuth();
+        heading = qmc.getAzimuth();
         
         if(bmp.hasValue()){
             temp = bmp.getTemperature();

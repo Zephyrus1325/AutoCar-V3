@@ -6,6 +6,7 @@
  version 2 as published by the Free Software Foundation.
  */
 #include "RF24Network_config.h"
+#include "esp_task_wdt.h"
 
 #if defined(RF24_LINUX)
     #include <stdlib.h>
@@ -136,6 +137,7 @@ uint8_t ESBNetwork<radio_t>::update(void)
 
     while (radio.available()) {
         if (millis() - timeout > 1000) {
+            
 #if defined FAILURE_HANDLING
             radio.failureDetected = 1;
 #endif
@@ -248,7 +250,7 @@ uint8_t ESBNetwork<radio_t>::update(void)
             }
 #endif // defined(RF24NetworkMulticast)
         }
-
+        yield();    // Yield for some reason
     } // radio.available()
     return returnVal;
 }
@@ -775,6 +777,7 @@ bool ESBNetwork<radio_t>::write(RF24NetworkHeader& header, const void* message, 
 
         // Message was successful sent
         IF_RF24NETWORK_DEBUG_FRAGMENTATION_L2(printf_P(PSTR("FRG message transmission with fragmentID '%d' successful.\n\r"), fragment_id));
+        yield();    // Yield for some reason
     }
     header.type = type;
     if (networkFlags & FLAG_FAST_FRAG) {
@@ -921,6 +924,7 @@ bool ESBNetwork<radio_t>::write(uint16_t to_node, uint8_t sendType)
                 ok = false;
                 break;
             }
+            yield();    // Yield for some reason
         }
     }
     if (!(networkFlags & FLAG_FAST_FRAG)) {

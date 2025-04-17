@@ -37,7 +37,7 @@ void setup(void) {
   while (!Serial) {
     // some boards need this because of native USB capability
   }
-  Serial.println(F("RF24Network/examples/helloworld_rx/"));
+  Serial.println(F("Program Begun"));
 
   if (!radio.begin()) {
     Serial.println(F("Radio hardware not responding!"));

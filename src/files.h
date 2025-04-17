@@ -15,6 +15,26 @@
 #include "macros.h"
 #include "configs.h"
 
+QueueHandle_t sdQueue;
+
+enum operation{
+    READ = 0,
+    WRITE = 1,
+};
+
+// Meta data for SD card transfers
+/*
+    @param operation  Type of operation
+    @param length  Length of data to be sent/received
+    @param data  Pointer to data to be sent/changed
+    @param path  Path of file to be read/written to
+*/
+struct SDQueueMeta{
+    uint8_t operation;  // Type of operation (lol)
+    size_t length;      // Length of data to be sent/received
+    void* data;         // Pointer to data to be sent/changed
+    char path[64];      // Path of file to be read/written to
+};
 
 // Struct used for handling SD Card Metadata
 struct {
@@ -77,9 +97,16 @@ void writeSD(const char* path, uint8_t* buffer, uint32_t data_length){
     file.close();
 }
 
-void SDTask(void* param){
+void sdTask(void* param){
     while(true){
         esp_task_wdt_reset();
+        SDQueueMeta buffer;
+        xQueueReceive(sdQueue, &buffer, portMAX_DELAY);
+        if(buffer.operation == WRITE){
+            writeSD(buffer.path, (uint8_t*) buffer.data, buffer.length);
+        } else {
+            readSD(buffer.path, (uint8_t*) buffer.data, buffer.length);
+        }
         yield();
     }
 }

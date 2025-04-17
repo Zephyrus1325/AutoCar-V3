@@ -13,7 +13,8 @@ struct Chunk{
     Vector position;                  // Position of a chunk
     int16_t length;                    // length of the walls of a chunk 
     int16_t precision;                 // Precision used in this chunk
-    uint8_t status[CHUNK_STORAGE];     // compacted data of a chunk
+    uint8_t status;                  // Status of a chunk 0 - Unloaded | 1 - loaded | 2 - loading
+    uint8_t data[CHUNK_STORAGE];     // compacted data of a chunk
 };
 
 Chunk chunks[9];    // 9 Chunks will be used, in theory, there will be one for each direction, and the center
