@@ -48,14 +48,14 @@ struct {
 void SD_begin(){
 
     if(!SD.begin(SD_PIN)){
-        error("SD Card Mount Failed\n");
+        error("SD Card Mount Failed\n\r");
         return;
     }
 
     SD_Meta.type = SD.cardType();
 
     if(SD_Meta.type == CARD_NONE){
-      error("No SD card attached\n");
+      error("No SD card attached\n\r");
       return;
     }
 
@@ -70,12 +70,12 @@ void readSD(const char* path, uint8_t* buffer, uint32_t data_length){
     
 
     if(!file){
-        error("Failed to open file for reading\n");
+        error("Failed to open file for reading\n\r");
         return;
     }
 
     if(!file.read(buffer, data_length)){
-        error("Data reading failed!\n");
+        error("Data reading failed!\n\r");
     }
 
     file.close();
@@ -86,12 +86,12 @@ void writeSD(const char* path, uint8_t* buffer, uint32_t data_length){
     File file = SD.open(path, FILE_WRITE);
 
     if(!file){
-        error("Failed to open file for writing\n");
+        error("Failed to open file for writing\n\r");
         return;
     }
 
     if(!file.write(buffer, data_length)){
-        error("File write failed!\n");
+        error("File write failed!\n\r");
     }
 
     file.close();

@@ -34,16 +34,17 @@ void transmitData(message_type type, void* dataToSend, size_t data_length){
 void radioTask(void* param){
 
     if (!radio.begin()) {
-        error("RF24 Radio hardware is not responding!!\n");
+        error("RF24 Radio hardware is not responding!!\n\r");
         while (1) {yield();}  // hold in infinite loop
     }
     
     buffer = (uint8_t*) malloc(sizeof(uint8_t) * RECEIVE_BUFFER_SIZE);
     if (buffer == nullptr) {
-        error("Memory Allocation Error: Radio\n");
+        error("Memory Allocation Error: Radio\n\r");
     }
 
     radio.setChannel(90);
+    radio.setDataRate(RF24_1MBPS);
     network.begin(car_address);
 
     while(true){

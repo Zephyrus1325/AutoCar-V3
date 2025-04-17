@@ -14,6 +14,7 @@
 #include "radio.h"
 #include "files.h"
 
+#include "chunkHandler.h"
 
 
 class Lidar{
@@ -134,12 +135,18 @@ class Lidar{
 };
 
 Lidar lidar;
-char text[] = "Hello World! This message is written from LidarTask(tm)";
+char text[] = "hexamryiakaipentachiliapentahectokaitriacontakaiheptagon";
 
 void lidarTask(void* param){
-    
-    SDQueueMeta sd{WRITE, sizeof(text), text, "/HelloLidar.txt"};
-    xQueueSend(sdQueue, &sd, 0);
+    log_message msg;
+    msg.setText("hexamryiakaipentachiliapentahectokaitriacontakaiheptagon");
+    transmitData(LOG_MESSAGE, &msg, sizeof(log_message));
+
+    SDQueueMeta meta{WRITE, sizeof(text), text, "/HelloWorld2.txt"};
+    xQueueSend(sdQueue, &meta, 0);
+
+    chunk_begin();
+
     while(true){
         esp_task_wdt_reset();               // Reset WatchDog Timer, or else task will fail
         lidar.update();                     // Update Lidar object
@@ -147,7 +154,7 @@ void lidarTask(void* param){
     }
 
     // Kill task in case something goes wrong
-    error("Lidar task was interrupted for some reason");
+    error("Lidar task was interrupted for some reason\n\r");
 }  
 
 

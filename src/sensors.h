@@ -71,21 +71,22 @@ class IMU{
         // Check if all devices are working properly
         Wire.beginTransmission(0x68);
         if(Wire.endTransmission()){
-            error("MPU Is not working!");
+            error("MPU Is not working!\n\r");
         }
         Wire.beginTransmission(0x0D);
         if(Wire.endTransmission()){
-            error("QMC5883L Is not working!");
+            error("QMC5883L Is not working!\n\r");
         }
         Wire.beginTransmission(0x77);
         if(Wire.endTransmission()){
-            error("BMP180 Is not working!");
+            error("BMP180 Is not working!\n\r");
         }
-        
-
         mpu.initialize();
         mpu.CalibrateAccel();
         mpu.CalibrateGyro();
+        if(!mpu.testConnection()){
+            error("MPU Is not working!\n\r");
+        }
 
         qmc.init();
         qmc.setMagneticDeclination(-23, 53);
@@ -101,6 +102,12 @@ class IMU{
         mpu.getAcceleration(&accel.x, &accel.y, &accel.z);
         mpu.getRotation(&gyro.x, &gyro.y, &gyro.z);
         tempRaw = mpu.getTemperature();
+        //log(accel.x);
+        //log(" | ");
+        //log(accel.y);
+        //log(" | ");
+        //log(accel.z);
+        //log("\n\r");
 
         magRaw.x = qmc.getX();
         magRaw.y = qmc.getY();

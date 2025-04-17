@@ -23,10 +23,10 @@ void setup(){
     radioQueue = xQueueCreate(RADIO_QUEUE_SIZE, sizeof(radioQueueData)); // Initialize messages queue
     sdQueue = xQueueCreate(SD_QUEUE_SIZE, sizeof(SDQueueMeta));  // Initialize file operations queue
     if(radioQueue == NULL){
-      error("Radio Queue was not created!\n");
+      error("Radio Queue was not created!\n\r");
     }
     if(sdQueue == NULL){
-        error("SD Queue was not created!\n");
+        error("SD Queue was not created!\n\r");
     }
 
     xTaskCreateUniversal(radioTask,
@@ -72,13 +72,13 @@ void setup(){
     //    &navHandler,
     //    AUX_CORE); 
 
-    //xTaskCreateUniversal(sensorsTask,
-    //    "Sensor Task", 
-    //    8000, 
-    //    (void*) 1, 
-    //    1, 
-    //    &navHandler,
-    //    MAIN_CORE); 
+    xTaskCreateUniversal(sensorsTask,
+        "Sensor Task", 
+        4000, 
+        (void*) 1, 
+        1, 
+        &navHandler,
+        MAIN_CORE); 
 }
 
 void loop(){

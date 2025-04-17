@@ -34,7 +34,7 @@ enum message_type{
 
 struct radioQueueData{
     uint8_t messageType;    // Message type
-    uint8_t data[100];      // Pointer to the data to be sent
+    uint8_t data[150];      // Pointer to the data to be sent
 };
 
 
@@ -86,9 +86,9 @@ struct chunk_metadata{
 };
 
 struct chunk_data{
-    Vector position;        // Chunk position
-    uint16_t subdivision;   // Subdivion id
-    uint8_t* data;          // data inside subdivision
+    Vector position;                  // Chunk position
+    uint16_t subdivision;             // Subdivion id
+    uint8_t data[CHUNK_RADIO_SIZE];   // data inside subdivision
 };
 
 struct command{

@@ -3,14 +3,14 @@
 #define AUX_CORE 0
 #define MIN_DELAY 3 // Minimum delay of each task
 // Chunks Config
-#define CHUNK_SIZE 512 // length of a chunk
+#define CHUNK_SIZE 32 // length of a chunk
 #define CHUNK_AREA CHUNK_SIZE * CHUNK_SIZE // area used by a chunk
 #define CHUNK_STORAGE CHUNK_AREA / 8 // storage used per chunk
-#define CHUNK_SUBDIVISION 64         // How to subdivide a chunk for faster sending (Should be power of 2)
-#define CHUNK_RADIO_SIZE CHUNK_STORAGE / CHUNK_SUBDIVISION // 512 bytes per subdivision
+#define CHUNK_SUBDIVISION 8         // How to subdivide a chunk for faster sending (Should be power of 2)
+#define CHUNK_RADIO_SIZE (CHUNK_STORAGE) / CHUNK_SUBDIVISION // 128 bytes per subdivision
 
 // Radio Config
-#define RADIO_QUEUE_SIZE 50     // Number of data quests
+#define RADIO_QUEUE_SIZE 100     // Number of data quests
 #define RECEIVE_BUFFER_SIZE CHUNK_RADIO_SIZE // Size of radio RX buffer (bytes)
 #define MAX_LOG_MESSAGE 64      // Maximum length of a log message
 
