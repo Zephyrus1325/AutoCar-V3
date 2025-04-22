@@ -17,7 +17,6 @@ void setup(){
     #ifdef DEBUG
         Serial.begin(115200);
     #endif
-    SD_begin();
     lidar.begin();
     //radioStatus = radio.begin();
     radioQueue = xQueueCreate(RADIO_QUEUE_SIZE, sizeof(radioQueueData)); // Initialize messages queue
@@ -40,7 +39,7 @@ void setup(){
     
     xTaskCreateUniversal(sdTask,
         "SD Task", 
-        8000, 
+        10000, 
         (void*) 1, 
         1, 
         &sdHandler,

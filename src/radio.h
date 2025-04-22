@@ -9,8 +9,8 @@
 #include "RF24.h"
 #include "RF24Network.h"
 #include <SPI.h>
-#include "macros.h"
 
+#include "macros.h"
 
 #include "radioEnum.h"
 
@@ -20,7 +20,6 @@ uint16_t car_address = 01;
 uint16_t base_address = 00;
 
 RF24Network network(radio);
-uint8_t* buffer = nullptr;
 // Set up main data queue
 
 void transmitData(message_type type, void* dataToSend, size_t data_length){
@@ -34,30 +33,40 @@ void transmitData(message_type type, void* dataToSend, size_t data_length){
 void radioTask(void* param){
 
     if (!radio.begin()) {
-        error("RF24 Radio hardware is not responding!!\n\r");
-        while (1) {yield();}  // hold in infinite loop
-    }
-    
-    buffer = (uint8_t*) malloc(sizeof(uint8_t) * RECEIVE_BUFFER_SIZE);
-    if (buffer == nullptr) {
-        error("Memory Allocation Error: Radio\n\r");
+        //error("RF24 Radio hardware is not responding!!\n\r");
+        Serial.println("RF24 Radio hardware is not responding!!\n\r");
+        while (1) {vTaskDelay(1000000);}  // hold in infinite loop
     }
 
     radio.setChannel(90);
-    radio.setDataRate(RF24_1MBPS);
+    radio.setDataRate(RF24_250KBPS);
+    radio.setPALevel(RF24_PA_MAX);
     network.begin(car_address);
 
+    uint8_t tries = 0;
     while(true){
         esp_task_wdt_reset();
         network.update();
         //Check if there is any message inside the queue
-        if(uxQueueMessagesWaiting(radioQueue)){
-            radioQueueData buffer;
-            xQueueReceive(radioQueue, &buffer, 0);
-            RF24NetworkHeader header(base_address);
-            network.write(header, &buffer, sizeof(radioQueueData));
+        radioQueueData buffer;
+        xQueueReceive(radioQueue, &buffer, portMAX_DELAY);
+        RF24NetworkHeader header(base_address);
+        if(!network.write(header, &buffer, sizeof(radioQueueData)) && tries < RADIO_MAX_TRIES && buffer.messageType != CHUNK_DATA){
+            xQueueSend(radioQueue, &buffer, 0);
+            //tries++;
+        } //else {
+          //  if(tries >= RADIO_MAX_TRIES){
+          //      vTaskDelay(2);    // yield for idle task a bit
+          //  }
+          //  tries = 0;
+        //}
+        // Handle received data
+        if(network.available()){
+            radioQueueData receive_buffer;
+            RF24NetworkHeader receive_header;
+            network.read(receive_header, &receive_buffer, sizeof(radioQueueData));
         }
-        vTaskDelay(MIN_DELAY);
+        
     }
 }
 

@@ -1,18 +1,26 @@
 // Core Config
 #define MAIN_CORE 1
 #define AUX_CORE 0
-#define MIN_DELAY 3 // Minimum delay of each task
+#define MIN_DELAY 2 // Minimum delay of each task
 // Chunks Config
-#define CHUNK_SIZE 32 // length of a chunk
+#define CHUNK_SIZE 104 // length of a chunk
 #define CHUNK_AREA CHUNK_SIZE * CHUNK_SIZE // area used by a chunk
 #define CHUNK_STORAGE CHUNK_AREA / 8 // storage used per chunk
-#define CHUNK_SUBDIVISION 8         // How to subdivide a chunk for faster sending (Should be power of 2)
+#define CHUNK_SUBDIVISION 16         // How to subdivide a chunk for faster sending (Should be power of 2)
 #define CHUNK_RADIO_SIZE (CHUNK_STORAGE) / CHUNK_SUBDIVISION // 128 bytes per subdivision
+#define CHUNK_SAVE_TIME 10000   // Wait time for a chunk to be saved onto SD card, for redundancy
 
 // Radio Config
-#define RADIO_QUEUE_SIZE 100     // Number of data quests
-#define RECEIVE_BUFFER_SIZE CHUNK_RADIO_SIZE // Size of radio RX buffer (bytes)
-#define MAX_LOG_MESSAGE 64      // Maximum length of a log message
+#define RADIO_QUEUE_SIZE 250     // Number of data quests
+#define RADIO_MAX_TRIES 16       // Maximum number of send tries befores giving up (except chunk data)
+#define MAX_LOG_MESSAGE 96      // Maximum length of a log message
+
+// Update delay for each type of data
+#define DELAY_NAV_DATA 100
+#define DELAY_LIDAR_DATA 1000
+#define DELAY_GPS_DATA 1000
+#define DELAY_MOTOR_DATA 100
+#define DELAY_CHUNK_DATA 1500
 
 // SD config
 #define SD_QUEUE_SIZE 20        // Number of Read/Writes Queue

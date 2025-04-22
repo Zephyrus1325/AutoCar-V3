@@ -43,7 +43,6 @@ class IMU{
     float pitch;
     float roll;
 
-
     public:
     IMU() : bmp(0x77){}
 
@@ -82,8 +81,8 @@ class IMU{
             error("BMP180 Is not working!\n\r");
         }
         mpu.initialize();
-        mpu.CalibrateAccel();
-        mpu.CalibrateGyro();
+        //mpu.CalibrateAccel();
+        //mpu.CalibrateGyro();
         if(!mpu.testConnection()){
             error("MPU Is not working!\n\r");
         }
@@ -92,6 +91,7 @@ class IMU{
         qmc.setMagneticDeclination(-23, 53);
         qmc.setCalibrationOffsets(-2190, -650, 361);
         qmc.setCalibrationScales(1.0, 1.10, 1);
+        qmc.setSmoothing(10, true);
 
         bmp.begin();
         bmp.resetToDefaults();
@@ -102,12 +102,8 @@ class IMU{
         mpu.getAcceleration(&accel.x, &accel.y, &accel.z);
         mpu.getRotation(&gyro.x, &gyro.y, &gyro.z);
         tempRaw = mpu.getTemperature();
-        //log(accel.x);
-        //log(" | ");
-        //log(accel.y);
-        //log(" | ");
-        //log(accel.z);
-        //log("\n\r");
+        String data = String(accel.x) + " | " + String(accel.y) + " | " + String(accel.z) + "\n\r";
+        log(data);
 
         magRaw.x = qmc.getX();
         magRaw.y = qmc.getY();
@@ -124,8 +120,6 @@ class IMU{
         bmp.measureTemperature();
         bmp.measurePressure();
 
-        
-        
     }
 
     

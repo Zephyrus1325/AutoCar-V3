@@ -21,5 +21,21 @@ struct vectorf_t{
     float z;
 };
 
+struct {
+    uint8_t navigation_mode;
+    uint8_t radio_pa;
+    uint8_t radio_channel;
+    uint8_t radio_datarate;
+    uint8_t lidar_speed;
+    uint8_t motorL_mode;
+    float motorL_kp;
+    float motorL_ki;
+    float motorL_kd;
+    uint8_t motorR_mode;
+    float motorR_kp;
+    float motorR_ki;
+    float motorR_kd;
+
+} initialConfigs;
 
 #endif //UTIL_H

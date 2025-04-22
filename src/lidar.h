@@ -18,19 +18,12 @@
 
 
 class Lidar{
-
-    #define DATA_SIZE 3600
     public:
 
     void begin(){
         Serial2.begin(115200);          // Initialize Serial for Data Receiving
         pinMode(LIDAR_PIN, OUTPUT);     // Set Motor Control Pin as OUTPUT
         setSpeed(215);                  // Set Motor Speed
-        // Allocate Memory for raw readings buffer
-        raw_reading = (reading*) malloc(sizeof(reading) * DATA_SIZE);
-        if (raw_reading == nullptr) {
-            error("Memory Allocation Error: LIDAR\n");
-        }
     }
 
     void update(){
@@ -89,7 +82,6 @@ class Lidar{
 
     // Buffer used for the Serial2 Data
     uint8_t buffer[100];
-    reading* raw_reading = nullptr;
     // Packet reading info
     uint16_t index = 0;
     // Function to parse the data from the buffer
@@ -100,12 +92,39 @@ class Lidar{
             // Get message parameters
             uint16_t initial_angle = ((buffer[START_ANGLE0] << 8) + buffer[START_ANGLE1]);
             uint8_t total_samples = (buffer[PAYLOAD_LEN] - 5)/3;
-            uint16_t angle_increment = 2250 / total_samples;
+            float angle_increment = 22.5f / total_samples;
             // Iterate for every sample
-            //for(int i = 0; i < total_samples*3; i += 3){
-            //    // Iterator thingy
-            //    uint16_t distance = (buffer[PAYLOAD_START + i] << 8) + buffer[PAYLOAD_START + i + 1];
-            //}
+            float angle = initial_angle / 100.0f;
+            
+            for(int i = 0; i < total_samples*3; i += 3){
+            
+                float angle_rad = radians(angle + angle_increment * (i/3));
+                uint16_t distance = (buffer[PAYLOAD_START + i + 1] << 8) + buffer[PAYLOAD_START + i + 2];
+                
+                // if the distance is not a invalid value (not zero)
+                if(distance){
+                    float distance_final = distance * 0.0025f;
+                    int16_t posX = distance_final * sin(angle_rad);
+                    int16_t posY = distance_final * cos(angle_rad);
+
+                    // Find chunk of coordinate
+                    
+                    int16_t chunkX = posX / CHUNK_SIZE;
+                    int16_t chunkY = posY / CHUNK_SIZE;
+                    
+                    uint16_t verticalOffset = (posY % CHUNK_SIZE) * CHUNK_SIZE;  // Finds of lateral offset for the coordinate
+                    uint16_t byteIndex = (posX % CHUNK_SIZE) / 8; // Finds which byte the coordinate is
+                    uint8_t bitIndex = (posX % CHUNK_SIZE) % 8;   // Finds which bit the coordinate is
+
+                    uint16_t final_index = verticalOffset + byteIndex;
+                    
+                    // load a chunk with the coordinates, and then set its bit;
+                    uint8_t chunk_id = getChunk(chunkX, chunkY);
+                    chunks[chunk_id].data[final_index] |= (1 << bitIndex); 
+                    chunks[chunk_id].lastWrite = millis();
+                    
+                }
+            }
             
         }
     }
@@ -135,21 +154,19 @@ class Lidar{
 };
 
 Lidar lidar;
-char text[] = "hexamryiakaipentachiliapentahectokaitriacontakaiheptagon";
 
 void lidarTask(void* param){
-    log_message msg;
-    msg.setText("hexamryiakaipentachiliapentahectokaitriacontakaiheptagon");
-    transmitData(LOG_MESSAGE, &msg, sizeof(log_message));
-
-    SDQueueMeta meta{WRITE, sizeof(text), text, "/HelloWorld2.txt"};
-    xQueueSend(sdQueue, &meta, 0);
 
     chunk_begin();
-
+    uint64_t lastChunkUpload = 0;
     while(true){
         esp_task_wdt_reset();               // Reset WatchDog Timer, or else task will fail
         lidar.update();                     // Update Lidar object
+        if(millis() - lastChunkUpload > DELAY_CHUNK_DATA){
+            //transmitChunk();
+            chunkUpdate();
+            lastChunkUpload = millis();
+        }
         vTaskDelay(pdMS_TO_TICKS(10));      // Delay a bit for other tasks to work and free CPU time
     }
 

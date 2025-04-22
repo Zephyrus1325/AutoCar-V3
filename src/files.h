@@ -17,6 +17,8 @@
 
 QueueHandle_t sdQueue;
 
+boolean isSDActive = false;
+
 enum operation{
     READ = 0,
     WRITE = 1,
@@ -59,6 +61,7 @@ void SD_begin(){
       return;
     }
 
+    isSDActive = true;
     SD_Meta.size = SD.totalBytes();
     SD_Meta.used = SD.usedBytes();
     
@@ -66,11 +69,25 @@ void SD_begin(){
 
 // Reads a block of data from SD card and writes to buffer
 void readSD(const char* path, uint8_t* buffer, uint32_t data_length){
+    
+    if(!SD.exists(path)){
+        File temp = SD.open(path, FILE_WRITE);
+        if(!temp){
+            
+            error("Failed to create file: ");
+            log(path);
+            log("\n\r");
+        } else {
+            temp.write(0);
+        }
+    }
+
     File file = SD.open(path, FILE_READ);
     
-
+    
     if(!file){
-        error("Failed to open file for reading\n\r");
+        String errorText = "Failed to open file for reading: " + String(path) + "\n\r";
+        error(errorText);
         return;
     }
 
@@ -86,7 +103,9 @@ void writeSD(const char* path, uint8_t* buffer, uint32_t data_length){
     File file = SD.open(path, FILE_WRITE);
 
     if(!file){
-        error("Failed to open file for writing\n\r");
+        error("Failed to open file for writing: ");
+        log(path);
+        log("\n\r");
         return;
     }
 
@@ -97,9 +116,16 @@ void writeSD(const char* path, uint8_t* buffer, uint32_t data_length){
     file.close();
 }
 
-void sdTask(void* param){
+void sdTask(void* param){  
     while(true){
         esp_task_wdt_reset();
+        // Check if SD Card is Active
+        while(!isSDActive){
+            SD_begin(); // Try to initiate SD Card
+            if(!isSDActive){
+                vTaskDelay(1000);   // If it did not start, wait 1 second before trying again
+            }
+        }  
         SDQueueMeta buffer;
         xQueueReceive(sdQueue, &buffer, portMAX_DELAY);
         if(buffer.operation == WRITE){
