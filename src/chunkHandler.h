@@ -26,7 +26,7 @@ enum chunk_status{
     LOADED
 };
 
-Chunk chunks[9];    // 9 Chunks will be used, in theory, there will be one for each direction, and the center
+Chunk chunks[9];    // 4 Chunks will be used, in theory, there will be one for each corner around the car
 
 
 /*
@@ -106,9 +106,8 @@ void transmitChunk(){
             data.position = chunks[i].position;
             data.subdivision = j;
             memcpy(data.data, &chunks[i].data[j*CHUNK_SUBDIVISION], CHUNK_RADIO_SIZE);
-            transmitData(CHUNK_DATA, &data, sizeof(chunk_data));
+            xQueueSend(chunkQueue, &data, 0);
         }
-        vTaskDelay(3);
     }
 }
 
@@ -123,6 +122,26 @@ void chunkUpdate(){
             xQueueSend(sdQueue, &sd_request, 0);
         }
     }
+}
+
+void getChunkPos(int16_t posX, int16_t posY, int16_t* chunkX, int16_t* chunkY){
+    // Find chunk of coordinate
+    int8_t constX = posX > 0 ? 1 : -1;
+    int8_t constY = posY > 0 ? 1 : -1;
+
+    *chunkX = ((posX/(CHUNK_SIZE*UNIT_SIZE/2)) + constX) / 2;
+    *chunkY = ((posY/(CHUNK_SIZE*UNIT_SIZE/2)) + constY) / 2;
+}
+
+void getChunkLocalIndex(int16_t posX, int16_t posY, uint16_t* index){
+    // Calculating local chunk position
+    int16_t offsetX = (posX + (CHUNK_SIZE*UNIT_SIZE/2)) / UNIT_SIZE;
+    int16_t offsetY = (posY + (CHUNK_SIZE*UNIT_SIZE/2)) / UNIT_SIZE;
+
+    offsetX = offsetX > 0 ? offsetX : offsetX - 1; // Corrects the 1 offset at x < 0, at the cost of x = 0 being invalid
+    offsetY = offsetY > 0 ? offsetY : abs(offsetY) -  CHUNK_SIZE * (abs(offsetY/CHUNK_SIZE)+1); // Corrects the inversion at the cost of every offPoxY = 0 being invalid (should be fixed)
+
+    *index = (offsetX % CHUNK_SIZE) + (abs(offsetY) % CHUNK_SIZE) * CHUNK_SIZE;
 }
 
 void chunk_begin(){

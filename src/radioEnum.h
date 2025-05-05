@@ -6,6 +6,7 @@
 #include "string.h"
 
 QueueHandle_t radioQueue;
+QueueHandle_t chunkQueue;
 
 enum message_type{
     LOG_MESSAGE = 0x00,         // Sender: CarV3
@@ -34,6 +35,7 @@ enum message_type{
 
 struct radioQueueData{
     uint8_t messageType;    // Message type
+    uint8_t length;         // Length of sent message
     uint8_t data[100];      // Pointer to the data to be sent
 };
 
@@ -86,6 +88,7 @@ struct chunk_metadata{
 };
 
 struct chunk_data{
+    const uint8_t dataType = CHUNK_DATA;    // Header of message
     Vector position;                  // Chunk position
     uint16_t subdivision;             // Subdivion id
     uint8_t data[CHUNK_RADIO_SIZE];   // data inside subdivision

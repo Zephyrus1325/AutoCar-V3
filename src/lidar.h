@@ -23,7 +23,7 @@ class Lidar{
     void begin(){
         Serial2.begin(115200);          // Initialize Serial for Data Receiving
         pinMode(LIDAR_PIN, OUTPUT);     // Set Motor Control Pin as OUTPUT
-        setSpeed(215);                  // Set Motor Speed
+        setSpeed(255);                  // Set Motor Speed
     }
 
     void update(){
@@ -86,7 +86,6 @@ class Lidar{
     uint16_t index = 0;
     // Function to parse the data from the buffer
     void parseData(){
-        
         uint8_t rpm = buffer[RPM]; 
         if(buffer[MESSAGE_TYPE] == NORMAL){
             // Get message parameters
@@ -104,23 +103,18 @@ class Lidar{
                 // if the distance is not a invalid value (not zero)
                 if(distance){
                     float distance_final = distance * 0.0025f;
-                    int16_t posX = distance_final * sin(angle_rad);
-                    int16_t posY = distance_final * cos(angle_rad);
+                    int16_t posX = distance_final * sin(angle_rad) + navigation.position.x;
+                    int16_t posY = distance_final * cos(angle_rad) + navigation.position.y;
 
-                    // Find chunk of coordinate
-                    
-                    int16_t chunkX = posX / CHUNK_SIZE;
-                    int16_t chunkY = posY / CHUNK_SIZE;
-                    
-                    uint16_t verticalOffset = (posY % CHUNK_SIZE) * CHUNK_SIZE;  // Finds of lateral offset for the coordinate
-                    uint16_t byteIndex = (posX % CHUNK_SIZE) / 8; // Finds which byte the coordinate is
-                    uint8_t bitIndex = (posX % CHUNK_SIZE) % 8;   // Finds which bit the coordinate is
+                    int16_t chunkX, chunkY;
+                    getChunkPos(posX, posY, &chunkX, &chunkY); // get Chunk pos
 
-                    uint16_t final_index = verticalOffset + byteIndex;
-                    
+                    uint16_t index;
+                    getChunkLocalIndex(posX, posY, &index);
+
                     // load a chunk with the coordinates, and then set its bit;
                     uint8_t chunk_id = getChunk(chunkX, chunkY);
-                    chunks[chunk_id].data[final_index] |= (1 << bitIndex); 
+                    chunks[chunk_id].data[index] = 1;
                     chunks[chunk_id].lastWrite = millis();
                     
                 }
@@ -159,13 +153,18 @@ void lidarTask(void* param){
 
     chunk_begin();
     uint64_t lastChunkUpload = 0;
+    uint64_t lastChunkStore = 0;
     while(true){
         esp_task_wdt_reset();               // Reset WatchDog Timer, or else task will fail
         lidar.update();                     // Update Lidar object
-        if(millis() - lastChunkUpload > DELAY_CHUNK_DATA){
-            //transmitChunk();
-            chunkUpdate();
+        if(millis() - lastChunkUpload > DELAY_CHUNK_TRANSMIT){
+            transmitChunk();
             lastChunkUpload = millis();
+        }
+        if(millis() - lastChunkStore > DELAY_CHUNK_STORE && !sendingChunk){
+            chunkUpdate();
+            sendingChunk = 1;
+            lastChunkStore = millis();
         }
         vTaskDelay(pdMS_TO_TICKS(10));      // Delay a bit for other tasks to work and free CPU time
     }

@@ -20,17 +20,20 @@ class PID{
         public:
 
         void update(){
+            static float lastError = 0; 
             if(!manualError){
                 error = setpoint - actualValue;
             }
+            
             float PIDderivative = (actualValue - lastValue) * (millis() - lastUpdateTime)/1000.0f;
-            integral += error * (float)(millis() - lastUpdateTime)/1000.0f;
+            integral += ((error + lastError) / 2.f) * (float)(millis() - lastUpdateTime)/1000.0f;
             float proportional =  kp * error;
             float integralout =  ki * integral;
             float derivative =  kd * PIDderivative;
 
             output = proportional + integralout + derivative;
             
+            lastError = error;
             lastUpdateTime = millis();
             lastValue = actualValue;
         }
