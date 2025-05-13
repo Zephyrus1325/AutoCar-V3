@@ -73,7 +73,7 @@ uint8_t loadChunk(int16_t x, int16_t y){
     sd_request.operation = READ;
     strncpy(sd_request.path, path_read.c_str(), path_read.length()+1);
     //sd_request.path = "/chunks/none2.txt";
-    xQueueSend(sdQueue, &sd_request, 0);
+    //xQueueSend(sdQueue, &sd_request, 0);
     vTaskDelay(20);     // Delay because I cant make it faster in my mind
     // If the chunk read does not exist, then create it
     if(!chunks[lowest_id].exists){
@@ -105,7 +105,7 @@ void transmitChunk(){
             chunk_data data;
             data.position = chunks[i].position;
             data.subdivision = j;
-            memcpy(data.data, &chunks[i].data[j*CHUNK_SUBDIVISION], CHUNK_RADIO_SIZE);
+            memcpy(data.data, &chunks[i].data[j*CHUNK_RADIO_SIZE], CHUNK_RADIO_SIZE);
             xQueueSend(chunkQueue, &data, 0);
         }
     }

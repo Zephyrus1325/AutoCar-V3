@@ -3,7 +3,7 @@
 #define AUX_CORE 0
 #define MIN_DELAY 2 // Minimum delay of each task
 // Chunks Config
-#define UNIT_SIZE 10   // CM per unit of a chunk
+#define UNIT_SIZE 1   // CM per unit of a chunk
 #define CHUNK_SIZE 32 // length of a chunk
 #define CHUNK_AREA CHUNK_SIZE * CHUNK_SIZE // area used by a chunk in units
 #define CHUNK_STORAGE CHUNK_AREA    // storage used per chunk
@@ -22,7 +22,7 @@
 #define DELAY_LIDAR_DATA 1000
 #define DELAY_GPS_DATA 1000
 #define DELAY_MOTOR_DATA 100
-#define DELAY_CHUNK_TRANSMIT 2000
+#define DELAY_CHUNK_TRANSMIT 1500
 #define DELAY_CHUNK_STORE 10000
 
 // SD config

@@ -38,10 +38,9 @@ void radioTask(void* param){
         Serial.println("RF24 Radio hardware is not responding!!");
         vTaskDelay(portMAX_DELAY);  // wait forever
     }
-    radio.setChannel(90);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setPALevel(RF24_PA_MAX);
-    network.begin(car_address);
+    radio.setDataRate(RF24_1MBPS);
+    radio.setPALevel(RF24_PA_LOW);
+    network.begin(90, car_address);
 
     
     
@@ -66,6 +65,23 @@ void radioTask(void* param){
     }
 }
 
+void sendSerial(chunk_data* chunk){
+    Serial.write(0xAA);
+    Serial.write(0x00);
+    Serial.write(chunk->subdivision);
+
+    int16_t posX = (int16_t) chunk->position.x;
+    int16_t posY = (int16_t) chunk->position.y;
+    Serial.write(posX & 0x00ff);
+    Serial.write(posX >> 8);
+    Serial.write(posY & 0x00ff);
+    Serial.write(posY >> 8);
+
+    for(int i = 0; i < 128; i++){
+        Serial.write(chunk->data[i]);
+    }
+}
+
 // Auxiliary task to handle chunk sending
 uint8_t sendingChunk = 0;
 void chunkSendTask(void* param){
@@ -76,13 +92,21 @@ void chunkSendTask(void* param){
         
         RF24NetworkHeader header(base_address);
         network.write(header, &buffer, sizeof(chunk_data));
-        
+        //sendSerial(&buffer);
+    
+        //Serial.print(buffer.position.x);
+        //Serial.print(" | ");
+        //Serial.print(buffer.position.y);
+        //Serial.print(" | ");
+        //Serial.println(buffer.subdivision);
+
         if(!uxQueueMessagesWaiting(chunkQueue)){
             sendingChunk = 0;
         }
-        vTaskDelay(3);
         
     }
 }
+
+
 
 #endif //RADIO_H

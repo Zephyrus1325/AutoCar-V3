@@ -23,35 +23,39 @@ class Lidar{
     void begin(){
         Serial2.begin(115200);          // Initialize Serial for Data Receiving
         pinMode(LIDAR_PIN, OUTPUT);     // Set Motor Control Pin as OUTPUT
-        setSpeed(255);                  // Set Motor Speed
+        setSpeed(180);                  // Set Motor Speed
     }
 
     void update(){
-
+        uint16_t loopCounter = 0;
         // While there is data available on the serial
-        while(Serial2.available() > 0){
+        while(Serial2.available() > 0 && loopCounter < 10000){
             esp_task_wdt_reset();                   // Reset watchdog timer
             uint8_t reading = Serial2.read();       // Read received byte
-            buffer[index] = reading;                // Store into buffer
-            index++;                                
+            buffer[index] = reading;                // Store into buffer   
+
+            index++;     
             // If the buffer starts with correct header, continue adding bytes accordingly
             if(buffer[SYNC0] == 0xAA && buffer[SYNC1] == 0x00){
                 // If the index is more than the expected bytes to be received, parse the received data
-                if(index > (buffer[MESSAGE_LEN] + 2)){
-                    parseData();
-                    index = 0;
-                }     
-                // Else, if index is 
-            } else if(index > SYNC1){
-                index = 0;
+                if(index > MESSAGE_LEN){
+                    if(index >= (buffer[MESSAGE_LEN] + 2)){
+                        parseData();
+                        index = 0;
+                    }     
+                }            
+                // Else, try to align the index
+            } else if(buffer[index - 1] == 0xAA && buffer[index] == 0x00){
+                buffer[SYNC0] = 0xAA;
+                buffer[SYNC1] = 0x00;
+                index = 2;
             } 
             // Safety measure: if index if bigger than max possible value, reset it
             if(index >= sizeof(buffer)){
                 index = 0;
             }
-            
+            loopCounter++;
         }
-        
     }
 
     private:
@@ -81,7 +85,7 @@ class Lidar{
     };
 
     // Buffer used for the Serial2 Data
-    uint8_t buffer[100];
+    uint8_t buffer[140];
     // Packet reading info
     uint16_t index = 0;
     // Function to parse the data from the buffer
@@ -94,34 +98,46 @@ class Lidar{
             float angle_increment = 22.5f / total_samples;
             // Iterate for every sample
             float angle = initial_angle / 100.0f;
-            
+            //Serial.println(angle);
             for(int i = 0; i < total_samples*3; i += 3){
             
-                float angle_rad = radians(angle + angle_increment * (i/3));
+                
                 uint16_t distance = (buffer[PAYLOAD_START + i + 1] << 8) + buffer[PAYLOAD_START + i + 2];
                 
                 // if the distance is not a invalid value (not zero)
                 if(distance){
                     float distance_final = distance * 0.0025f;
-                    int16_t posX = distance_final * sin(angle_rad) + navigation.position.x;
-                    int16_t posY = distance_final * cos(angle_rad) + navigation.position.y;
-
-                    int16_t chunkX, chunkY;
-                    getChunkPos(posX, posY, &chunkX, &chunkY); // get Chunk pos
-
-                    uint16_t index;
-                    getChunkLocalIndex(posX, posY, &index);
-
-                    // load a chunk with the coordinates, and then set its bit;
-                    uint8_t chunk_id = getChunk(chunkX, chunkY);
-                    chunks[chunk_id].data[index] = 1;
-                    chunks[chunk_id].lastWrite = millis();
+                    float angle_rad = radians(angle + angle_increment * (i/3));
                     
+                    float distance = 0;
+                    while(distance < distance_final){
+                        setPoint(distance, angle_rad, 1);
+                        distance += UNIT_SIZE;
+                    }
+                    setPoint(distance_final, angle_rad, 255);
                 }
             }
             
+        } else if(buffer[MESSAGE_TYPE] == WRONG_SPEED){
+            //Serial.println(buffer[RPM]);
         }
     }
+
+    void setPoint(float distance, float angle, uint8_t value){
+        int16_t posX = distance * cos(angle) + navigation.position.x;
+        int16_t posY = distance * sin(angle) + navigation.position.y;
+        
+        int16_t chunkX, chunkY;
+        getChunkPos(posX, posY, &chunkX, &chunkY); // get Chunk pos
+        
+        uint16_t index;
+        getChunkLocalIndex(posX, posY, &index);
+        
+        // load a chunk with the coordinates, and then set its bit;
+        uint8_t chunk_id = getChunk(chunkX, chunkY);
+        chunks[chunk_id].data[index] = value;
+        chunks[chunk_id].lastWrite = millis();
+    }   
 
 
     // Error checking via CRC
@@ -156,17 +172,19 @@ void lidarTask(void* param){
     uint64_t lastChunkStore = 0;
     while(true){
         esp_task_wdt_reset();               // Reset WatchDog Timer, or else task will fail
+        
         lidar.update();                     // Update Lidar object
-        if(millis() - lastChunkUpload > DELAY_CHUNK_TRANSMIT){
+        if(millis() - lastChunkUpload > DELAY_CHUNK_TRANSMIT && !sendingChunk){
             transmitChunk();
+            sendingChunk = 1;
             lastChunkUpload = millis();
         }
-        if(millis() - lastChunkStore > DELAY_CHUNK_STORE && !sendingChunk){
-            chunkUpdate();
-            sendingChunk = 1;
+        if(millis() - lastChunkStore > DELAY_CHUNK_STORE){
+            //chunkUpdate();       
             lastChunkStore = millis();
         }
-        vTaskDelay(pdMS_TO_TICKS(10));      // Delay a bit for other tasks to work and free CPU time
+
+        vTaskDelay(pdMS_TO_TICKS(4));      // Delay a bit for other tasks to work and free CPU time
     }
 
     // Kill task in case something goes wrong
