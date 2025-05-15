@@ -14,14 +14,26 @@ TaskHandle_t sdHandler;
 TaskHandle_t motorHandler;
 TaskHandle_t navHandler;
 
-
-
 void setup(){
     // Initialize general-use libraries
     #ifdef DEBUG
         Serial.begin(115200);
     #endif
     lidar.begin();
+    //TEMPORARY: DELETE LATER
+    pinMode(LEFT_MOTOR_A, OUTPUT);
+    pinMode(LEFT_MOTOR_B, OUTPUT);
+    pinMode(LEFT_MOTOR_PWM, OUTPUT);
+    pinMode(RIGHT_MOTOR_A, OUTPUT);
+    pinMode(RIGHT_MOTOR_B, OUTPUT);
+    pinMode(RIGHT_MOTOR_PWM, OUTPUT);    
+
+    analogWrite(LEFT_MOTOR_PWM, 150);
+    analogWrite(RIGHT_MOTOR_PWM, 150);
+    digitalWrite(LEFT_MOTOR_A, LOW);
+    digitalWrite(LEFT_MOTOR_B, LOW);
+    digitalWrite(RIGHT_MOTOR_A, LOW);
+    digitalWrite(RIGHT_MOTOR_B, LOW);
     //radioStatus = radio.begin();
     radioQueue = xQueueCreate(RADIO_QUEUE_SIZE, sizeof(radioQueueData)); // Initialize messages queue
     chunkQueue = xQueueCreate(CHUNK_QUEUE_SIZE, sizeof(chunk_data)); // Initialize messages queue
@@ -54,7 +66,7 @@ void setup(){
         &chunkSendHandler,
         AUX_CORE);
         
-    
+    /*
     xTaskCreateUniversal(sdTask,
         "SD Task", 
         10000, 
@@ -62,7 +74,7 @@ void setup(){
         1, 
         &sdHandler,
         AUX_CORE);  
-    
+    */
         
     xTaskCreateUniversal(lidarTask,
         "Lidar Task", 

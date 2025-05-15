@@ -15,7 +15,7 @@
 #include "files.h"
 
 #include "chunkHandler.h"
-
+#include "sensors.h"
 
 class Lidar{
     public:
@@ -29,31 +29,23 @@ class Lidar{
     void update(){
         uint16_t loopCounter = 0;
         // While there is data available on the serial
-        while(Serial2.available() > 0 && loopCounter < 10000){
+        while(Serial2.available() > 0){
             esp_task_wdt_reset();                   // Reset watchdog timer
             uint8_t reading = Serial2.read();       // Read received byte
-            buffer[index] = reading;                // Store into buffer   
-
-            index++;     
-            // If the buffer starts with correct header, continue adding bytes accordingly
-            if(buffer[SYNC0] == 0xAA && buffer[SYNC1] == 0x00){
-                // If the index is more than the expected bytes to be received, parse the received data
-                if(index > MESSAGE_LEN){
-                    if(index >= (buffer[MESSAGE_LEN] + 2)){
-                        parseData();
-                        index = 0;
-                    }     
-                }            
-                // Else, try to align the index
-            } else if(buffer[index - 1] == 0xAA && buffer[index] == 0x00){
-                buffer[SYNC0] = 0xAA;
-                buffer[SYNC1] = 0x00;
-                index = 2;
-            } 
-            // Safety measure: if index if bigger than max possible value, reset it
-            if(index >= sizeof(buffer)){
-                index = 0;
+            if(lastReading == 0xAA && reading == 0x00){
+                message_length = Serial2.read();
+                message_length = message_length < 140 ? message_length : 1;
+                Serial2.readBytes(buffer, message_length-1);
+                if(checkCRC()){
+                    parseData();
+                    //Serial.println("PARSING");
+                } else {
+                    Serial.println("GAVE UP");
+                }
+                clearBuffer();
             }
+
+            lastReading = reading;
             loopCounter++;
         }
     }
@@ -65,18 +57,15 @@ class Lidar{
     };
 
     enum messageData{
-        SYNC0 = 0,
-        SYNC1 = 1,
-        MESSAGE_LEN = 2,
-        SYNC2 = 3,
-        SYNC3 = 4,
-        MESSAGE_TYPE = 5,
-        SYNC4 = 6,
-        PAYLOAD_LEN = 7,
-        RPM = 8,
-        START_ANGLE0 = 11,
-        START_ANGLE1 = 12,
-        PAYLOAD_START = 13
+        SYNC2 = 0,
+        SYNC3 = 1,
+        MESSAGE_TYPE = 2,
+        SYNC4 = 3,
+        PAYLOAD_LEN = 4,
+        RPM = 5,
+        START_ANGLE0 = 8,
+        START_ANGLE1 = 9,
+        PAYLOAD_START = 10
     };
 
     enum messageType{
@@ -86,8 +75,9 @@ class Lidar{
 
     // Buffer used for the Serial2 Data
     uint8_t buffer[140];
+    uint8_t lastReading = 0;
+    uint8_t message_length = 0;
     // Packet reading info
-    uint16_t index = 0;
     // Function to parse the data from the buffer
     void parseData(){
         uint8_t rpm = buffer[RPM]; 
@@ -97,8 +87,8 @@ class Lidar{
             uint8_t total_samples = (buffer[PAYLOAD_LEN] - 5)/3;
             float angle_increment = 22.5f / total_samples;
             // Iterate for every sample
-            float angle = initial_angle / 100.0f;
-            //Serial.println(angle);
+            float angle = (initial_angle / 100.0f);// + imu.getHeading();
+
             for(int i = 0; i < total_samples*3; i += 3){
             
                 
@@ -110,14 +100,18 @@ class Lidar{
                     float angle_rad = radians(angle + angle_increment * (i/3));
                     
                     float distance = 0;
+                    uint64_t start = micros();
+                    uint64_t counter = 0;
                     while(distance < distance_final){
                         setPoint(distance, angle_rad, 1);
                         distance += UNIT_SIZE;
+                        counter++;
                     }
+
                     setPoint(distance_final, angle_rad, 255);
                 }
             }
-            
+
         } else if(buffer[MESSAGE_TYPE] == WRONG_SPEED){
             //Serial.println(buffer[RPM]);
         }
@@ -129,32 +123,40 @@ class Lidar{
         
         int16_t chunkX, chunkY;
         getChunkPos(posX, posY, &chunkX, &chunkY); // get Chunk pos
-        
-        uint16_t index;
-        getChunkLocalIndex(posX, posY, &index);
-        
+          
         // load a chunk with the coordinates, and then set its bit;
-        uint8_t chunk_id = getChunk(chunkX, chunkY);
-        chunks[chunk_id].data[index] = value;
-        chunks[chunk_id].lastWrite = millis();
+        int8_t chunk_id = getChunk(chunkX, chunkY);
+        if(chunk_id != -1){
+            uint16_t index;
+            getChunkLocalIndex(posX, posY, &index);
+
+            chunks[chunk_id].data[index] = value;
+            chunks[chunk_id].lastWrite = millis();
+        }
+        
     }   
+
+    void clearBuffer(){
+        for(int i = 0; i < sizeof(buffer); i++){
+            buffer[i] = 0;
+        }
+    }
 
 
     // Error checking via CRC
     bool checkCRC(){
-      uint16_t crc = 0;
-      uint8_t len = buffer[MESSAGE_LEN];
+      uint16_t crc = 0xAA + message_length;
 
-      // Calculates CRC Sum via received data 
-      for(int i = 0; i < buffer[MESSAGE_LEN]; i++){
-          crc += buffer[i];
-      }
-
-      // Compares with received CRC
-      if(((crc >> 8) == buffer[len]) && ((crc & 0xff) == buffer[len + 1])){
-        return true;
-      }
-      return false;
+        // Calculates CRC Sum via received data 
+        for(int i = 0; i < message_length-3; i++){
+            crc += buffer[i];
+        }
+        
+        // Compares with received CRC
+        if(((crc >> 8) == buffer[message_length-3]) && ((crc & 0xff) == buffer[message_length-2])){
+          return true;
+        }
+        return false;
     }
 
     // Sets lidar speed
@@ -180,11 +182,10 @@ void lidarTask(void* param){
             lastChunkUpload = millis();
         }
         if(millis() - lastChunkStore > DELAY_CHUNK_STORE){
-            //chunkUpdate();       
+            //chunkUpdate();    
             lastChunkStore = millis();
         }
-
-        vTaskDelay(pdMS_TO_TICKS(4));      // Delay a bit for other tasks to work and free CPU time
+        vTaskDelay(pdMS_TO_TICKS(10));      // Delay a bit for other tasks to work and free CPU time
     }
 
     // Kill task in case something goes wrong

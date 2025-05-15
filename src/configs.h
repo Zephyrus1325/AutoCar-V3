@@ -13,7 +13,7 @@
 
 // Radio Config
 #define RADIO_QUEUE_SIZE 15     // Number of data quests
-#define CHUNK_QUEUE_SIZE 250     //
+#define CHUNK_QUEUE_SIZE 80    //
 #define RADIO_MAX_TRIES 16       // Maximum number of send tries befores giving up (except chunk data)
 #define MAX_LOG_MESSAGE 96      // Maximum length of a log message
 
@@ -23,7 +23,7 @@
 #define DELAY_GPS_DATA 1000
 #define DELAY_MOTOR_DATA 100
 #define DELAY_CHUNK_TRANSMIT 1500
-#define DELAY_CHUNK_STORE 10000
+#define DELAY_CHUNK_STORE 1000
 
 // SD config
 #define SD_QUEUE_SIZE 20        // Number of Read/Writes Queue
@@ -36,14 +36,14 @@
 
 // Pins Config
 // Motor Pins
-#define LEFT_MOTOR_A    2
-#define LEFT_MOTOR_B    3
-#define LEFT_MOTOR_PWM  4
-#define LEFT_MOTOR_ENCODER 5
-#define RIGHT_MOTOR_A    6
-#define RIGHT_MOTOR_B    7
-#define RIGHT_MOTOR_PWM  8
-#define RIGHT_MOTOR_ENCODER 9
+#define LEFT_MOTOR_A    27
+#define LEFT_MOTOR_B    14
+#define LEFT_MOTOR_PWM  12
+#define LEFT_MOTOR_ENCODER 35
+#define RIGHT_MOTOR_A    26
+#define RIGHT_MOTOR_B    25
+#define RIGHT_MOTOR_PWM  33
+#define RIGHT_MOTOR_ENCODER 34
 
 // General Pin Config
 #define SD_PIN 15

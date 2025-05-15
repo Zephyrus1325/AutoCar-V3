@@ -16,11 +16,11 @@
 // IMU Sensors Handler
 // v0.1
 // Created By Marco Aurélio 15/04/2025
-
+IMU imu;
 
 void sensorsTask(void* param){
     
-    IMU imu;
+    
     imu.begin();
     while(true){
         esp_task_wdt_reset();

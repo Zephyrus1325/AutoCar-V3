@@ -90,16 +90,29 @@ uint8_t loadChunk(int16_t x, int16_t y){
 
 // return id of a specific chunk
 // if chunk is not loaded, load it and return its id
-uint8_t getChunk(int16_t x, int16_t y){
+int8_t getChunk(int16_t x, int16_t y){
     for(int i = 0; i < 9; i++){
         if(chunks[i].position.x == x && chunks[i].position.y == y){
             return i;
         }
     }
-    return loadChunk(x, y);
+    return -1;
+    //return loadChunk(x, y);
+}
+
+void chunkClear(){
+    for(int i = 0; i < 9; i++){
+        for(uint16_t j = 0; j < CHUNK_STORAGE; j++){
+            chunks[i].data[j] = 0;
+        }
+    }
 }
 
 void transmitChunk(){
+
+    
+
+
     for(int i = 0; i < 9; i++){
         for(uint16_t j = 0; j < CHUNK_SUBDIVISION; j++){
             chunk_data data;

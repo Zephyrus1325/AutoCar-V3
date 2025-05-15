@@ -20,6 +20,8 @@ RF24 radio(RF24_CE_PIN, RF24_CSN_PIN);
 uint16_t car_address = 01;
 uint16_t base_address = 00;
 
+uint8_t transmitRole = 1;   // Start car as always transmitting
+
 RF24Network network(radio);
 // Set up main data queue
 
@@ -38,30 +40,68 @@ void radioTask(void* param){
         Serial.println("RF24 Radio hardware is not responding!!");
         vTaskDelay(portMAX_DELAY);  // wait forever
     }
-    radio.setDataRate(RF24_1MBPS);
+    radio.setDataRate(RF24_250KBPS);
     radio.setPALevel(RF24_PA_LOW);
     network.begin(90, car_address);
 
     
-    
     while(true){
         esp_task_wdt_reset();
         network.update();
-        //Check if there is any message inside the queue
-        radioQueueData buffer;
-        xQueueReceive(radioQueue, &buffer, portMAX_DELAY);
-        
-        RF24NetworkHeader header(base_address);
-        if(!network.write(header, &buffer, sizeof(radioQueueData))){
-            xQueueSend(radioQueue, &buffer, 0);
-        }
+
         // Handle received data
         if(network.available()){
             radioQueueData receive_buffer;
             RF24NetworkHeader receive_header;
             network.read(receive_header, &receive_buffer, sizeof(radioQueueData));
+            
+            Serial.println("Received!");
+            
+            switch(receive_buffer.messageType){
+                case GO_FORWARD:
+                    digitalWrite(LEFT_MOTOR_A, HIGH);
+                    digitalWrite(LEFT_MOTOR_B, LOW);
+                    digitalWrite(RIGHT_MOTOR_A, HIGH);
+                    digitalWrite(RIGHT_MOTOR_B, LOW);
+                    break;
+                case GO_BACK:
+                    digitalWrite(LEFT_MOTOR_A, LOW);
+                    digitalWrite(LEFT_MOTOR_B, HIGH);
+                    digitalWrite(RIGHT_MOTOR_A, LOW);
+                    digitalWrite(RIGHT_MOTOR_B, HIGH);
+                    break;
+                case GO_LEFT:
+                    digitalWrite(LEFT_MOTOR_A, LOW);
+                    digitalWrite(LEFT_MOTOR_B, HIGH);
+                    digitalWrite(RIGHT_MOTOR_A, HIGH);
+                    digitalWrite(RIGHT_MOTOR_B, LOW);
+                    break;
+                case GO_RIGHT:
+                    digitalWrite(LEFT_MOTOR_A, HIGH);
+                    digitalWrite(LEFT_MOTOR_B, LOW);
+                    digitalWrite(RIGHT_MOTOR_A, LOW);
+                    digitalWrite(RIGHT_MOTOR_B, HIGH);
+                    break;
+                case STOP:
+                    digitalWrite(LEFT_MOTOR_A, LOW);
+                    digitalWrite(LEFT_MOTOR_B, LOW);
+                    digitalWrite(RIGHT_MOTOR_A, LOW);
+                    digitalWrite(RIGHT_MOTOR_B, LOW);
+                    break;
+                default:
+                    break;
+            }
         }
-        
+
+        //Check if there is any message inside the queue
+        radioQueueData buffer;
+        if(xQueueReceive(radioQueue, &buffer, 0)){
+            RF24NetworkHeader header(base_address);
+            if(!network.write(header, &buffer, sizeof(radioQueueData))){
+                xQueueSend(radioQueue, &buffer, 0);
+            }
+        }
+        vTaskDelay(5);
     }
 }
 
@@ -77,7 +117,7 @@ void sendSerial(chunk_data* chunk){
     Serial.write(posY & 0x00ff);
     Serial.write(posY >> 8);
 
-    for(int i = 0; i < 128; i++){
+    for(int i = 0; i < CHUNK_RADIO_SIZE; i++){
         Serial.write(chunk->data[i]);
     }
 }
@@ -87,23 +127,19 @@ uint8_t sendingChunk = 0;
 void chunkSendTask(void* param){
     while(true){
         esp_task_wdt_reset();
+        network.update();
         chunk_data buffer;
         xQueueReceive(chunkQueue, &buffer, portMAX_DELAY);
-        
+        network.update();
         RF24NetworkHeader header(base_address);
+
         network.write(header, &buffer, sizeof(chunk_data));
+        
         //sendSerial(&buffer);
     
-        //Serial.print(buffer.position.x);
-        //Serial.print(" | ");
-        //Serial.print(buffer.position.y);
-        //Serial.print(" | ");
-        //Serial.println(buffer.subdivision);
-
         if(!uxQueueMessagesWaiting(chunkQueue)){
             sendingChunk = 0;
         }
-        
     }
 }
 
