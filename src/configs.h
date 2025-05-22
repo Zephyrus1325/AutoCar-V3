@@ -2,6 +2,7 @@
 #define MAIN_CORE 1
 #define AUX_CORE 0
 #define MIN_DELAY 2 // Minimum delay of each task
+
 // Chunks Config
 #define UNIT_SIZE 1   // CM per unit of a chunk
 #define CHUNK_SIZE 32 // length of a chunk
@@ -16,13 +17,15 @@
 #define CHUNK_QUEUE_SIZE 80    //
 #define RADIO_MAX_TRIES 16       // Maximum number of send tries befores giving up (except chunk data)
 #define MAX_LOG_MESSAGE 96      // Maximum length of a log message
+#define TIMEOUT_TIME 5000  // time for base to try to transmit all data
+
 
 // Update delay for each type of data
 #define DELAY_NAV_DATA 100
 #define DELAY_LIDAR_DATA 1000
 #define DELAY_GPS_DATA 1000
 #define DELAY_MOTOR_DATA 100
-#define DELAY_CHUNK_TRANSMIT 1500
+#define DELAY_CHUNK_TRANSMIT 150
 #define DELAY_CHUNK_STORE 1000
 
 // SD config

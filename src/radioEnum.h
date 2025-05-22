@@ -27,12 +27,6 @@ enum message_type{
 
     CHUNK_METADATA = 0x40,      // Sender: CarV3
     CHUNK_DATA = 0x41,          // Sender: CarV3
-
-    GO_FORWARD = 0xA0,          // Sender: Base
-    GO_LEFT = 0xA1,             // Sender: Base
-    GO_RIGHT = 0xA2,            // Sender: Base
-    GO_BACK = 0xA3,             // Sender: Base
-    STOP = 0xA4,
     
     COMMAND = 0xFF              // Sender: Both
 };
@@ -107,14 +101,20 @@ struct command{
 
 enum command_type{
     PING = 0,
+    END_OF_PACKET,
+    DATA_REQUEST,
+
+    GO_FORWARD,          
+    GO_LEFT,             
+    GO_RIGHT,            
+    GO_BACK,             
+    STOP,
 
     NAVIGATION_CHANGE_DESTINATION,
     NAVIGATION_CHANGE_MODE,
 
     RADIO_CHANGE_PA,
     RADIO_CHANGE_CHANNEL,
-    RADIO_CAR_TRANSMIT,
-    RADIO_CAR_RECEIVE,
 
     LIDAR_CHANGE_SPEED,
 
